@@ -1,318 +1,279 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell } from 'recharts';
-import { collection, query, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { ArrowLeft, Filter } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { collection, getDocs, query } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { ArrowLeft, Filter } from "lucide-react";
+import { format } from "date-fns";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--destructive))'];
+type AnswerValue = string | number | boolean | string[] | null | undefined;
 
-const Analysis = () => {
+type ResponseDoc = {
+  id: string;
+  createdAt?: { toDate: () => Date };
+  answers?: Record<string, AnswerValue>;
+  userEmail?: string | null;
+  userId?: string | null;
+};
+
+const FULL_QUESTIONS: { id: string; label: string }[] = [
+  { id: "meta_nome", label: "Nome valutato / lavoratore" },
+  { id: "meta_postazione", label: "Postazione n." },
+  { id: "meta_reparto", label: "Ufficio / Reparto" },
+  { id: "1.1", label: "1.1 Ore di lavoro settimanali a VDT (abituali)" },
+  { id: "1.2", label: "1.2 Pause/cambi attività 15' ogni 120' (SI/NO)" },
+  { id: "1.2_note", label: "1.2 - Necessità di intervento (note)" },
+  { id: "1.3", label: "1.3 Tipo di lavoro prevalente" },
+  { id: "1.4", label: "1.4 Informazione al lavoratore per uso VDT (SI/NO)" },
+  { id: "1.4_note", label: "1.4 - Necessità di intervento (note)" },
+  { id: "2.1", label: "2.1 Modalità ricambio aria (naturale/artificiale)" },
+  { id: "2.2", label: "2.2 Possibilità di regolare la temperatura" },
+  { id: "2.3", label: "2.3 Possibilità di regolare l'umidità" },
+  { id: "2.4", label: "2.4 Eccesso di calore dalle attrezzature (SI/NO)" },
+  { id: "2.4_note", label: "2.4 - Necessità di intervento (note)" },
+  { id: "3.1", label: "3.1 Tipo di luce (naturale/artificiale/mista)" },
+  { id: "3.2_nat", label: "3.2 - Regolazione luce naturale" },
+  { id: "3.2_art", label: "3.2 - Regolazione luce artificiale" },
+  { id: "3.3", label: "3.3 Posizione rispetto alla sorgente naturale" },
+  { id: "3_note", label: "3 - Necessità di intervento (note)" },
+  { id: "4.1", label: "4.1 Eventuale misura rumore (dB(A))" },
+  { id: "4.2", label: "4.2 Disturbo attenzione/comunicazione (SI/NO)" },
+  { id: "4_note", label: "4 - Necessità di intervento (note)" },
+  { id: "5.1", label: "5.1 Spazio di lavoro/manovra adeguato (SI/NO)" },
+  { id: "5.2", label: "5.2 Percorsi liberi da ostacoli (SI/NO)" },
+  { id: "5_note", label: "5 - Necessità di intervento (note)" },
+  { id: "6.1", label: "6.1 Superficie del piano adeguata (SI/NO)" },
+  { id: "6.2", label: "6.2 Altezza del piano 70-80cm (SI/NO)" },
+  { id: "6.3", label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)" },
+  { id: "6_note", label: "6 - Necessità di intervento (note)" },
+  { id: "7.1", label: "7.1 Altezza sedile regolabile" },
+  { id: "7.2", label: "7.2 Inclinazione sedile regolabile" },
+  { id: "7.3", label: "7.3 Schienale con supporto dorso-lombare" },
+  { id: "7.4", label: "7.4 Schienale regolabile in altezza" },
+  { id: "7.5", label: "7.5 Schienale/seduta bordi smussati/materiali appropriati" },
+  { id: "7.6", label: "7.6 Presenza di ruote/meccanismo spostamento" },
+  { id: "7_note", label: "7 - Necessità di intervento (note)" },
+  { id: "8.1", label: "8.1 Monitor orientabile/inclinabile" },
+  { id: "8.2", label: "8.2 Immagine stabile, senza sfarfallio" },
+  { id: "8.3", label: "8.3 Risoluzione/luminosità regolabili" },
+  { id: "8.4", label: "8.4 Contrasto/luminosità adeguati" },
+  { id: "8.5", label: "8.5 Presenza di riflessi o riverberi" },
+  { id: "8.6", label: "8.6 Note su posizione dello schermo" },
+  { id: "8_note", label: "8 - Necessità di intervento (note)" },
+  { id: "9.1", label: "9.1 Tastiera e mouse separati dallo schermo" },
+  { id: "9.2", label: "9.2 Tastiera inclinabile" },
+  { id: "9.3", label: "9.3 Spazio per appoggiare avambracci" },
+  { id: "9.4", label: "9.4 Simboli/tasti leggibili" },
+  { id: "9_note", label: "9 - Necessità di intervento (note)" },
+  { id: "10.1", label: "10.1 Software adeguato e di facile utilizzo (SI/NO)" },
+  { id: "10_note", label: "10 - Osservazioni (note)" },
+  { id: "foto_postazione", label: "Foto della postazione (URL/nota)" },
+];
+
+export default function Analysis() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [responses, setResponses] = useState<any[]>([]);
+  const [responses, setResponses] = useState<ResponseDoc[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterWorker, setFilterWorker] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'general' | 'worker' | 'question'>('general');
+
+  const [tab, setTab] = useState<"workers" | "reparti">("workers");
+  const [selectedWorker, setSelectedWorker] = useState<string>("all");
+  const [selectedReparto, setSelectedReparto] = useState<string>("all");
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
-    loadResponses();
-  }, [user, navigate]);
+    load();
+  }, [user]);
 
-  const loadResponses = async () => {
+  const load = async () => {
+    setLoading(true);
     try {
-      const q = query(collection(db, 'responses'));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const q = query(collection(db, "responses"));
+      const snap = await getDocs(q);
+      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as ResponseDoc[];
       setResponses(data);
-    } catch (error) {
-      console.error('Error loading responses:', error);
+    } catch (err) {
+      console.error("load responses", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateScore = (answers: any) => {
-    if (!answers) return 0;
-    const scoreMap: Record<string, number> = {
-      'Eccellente': 100, 'Ottimo': 100,
-      'Buono': 75, 'Quasi sempre': 75, 'Soddisfatto': 75,
-      'Sufficiente': 50, 'Qualche ritardo': 50, 'Neutrale': 50,
-      'Insufficiente': 25, 'Scarso': 25, 'Spesso in ritardo': 25, 'Insoddisfatto': 25,
-      'Sempre puntuale': 100, 'Molto soddisfatto': 100
-    };
-    
-    let total = 0;
-    let count = 0;
-    ['q2', 'q3', 'q4', 'q7'].forEach(key => {
-      if (answers[key] && scoreMap[answers[key]]) {
-        total += scoreMap[answers[key]];
-        count++;
-      }
-    });
-    return count > 0 ? total / count : 0;
+  const workers = useMemo(
+    () => Array.from(new Set(responses.map((r) => String(r.answers?.meta_nome)).filter((n) => n !== "undefined" && n !== "null"))).sort(),
+    [responses]
+  );
+
+  const reparti = useMemo(
+    () => Array.from(new Set(responses.map((r) => r.answers?.meta_reparto).filter(Boolean))).sort(),
+    [responses]
+  );
+
+  const responsesByWorker = useMemo(() => {
+    if (selectedWorker === "all") return [];
+    return responses.filter((r) => r.answers?.meta_nome === selectedWorker);
+  }, [responses, selectedWorker]);
+
+  const responsesByReparto = useMemo(() => {
+    if (selectedReparto === "all") return [];
+    return responses.filter((r) => r.answers?.meta_reparto === selectedReparto);
+  }, [responses, selectedReparto]);
+
+  const renderAnswer = (val: string | number | boolean | string[] | undefined | null) => {
+    if (val === undefined || val === null || val === "") return <span className="text-muted-foreground">—</span>;
+    if (Array.isArray(val)) return <span>{val.join(", ")}</span>;
+    return <span>{String(val)}</span>;
   };
 
-  // Estrai lista unica di lavoratori/reparti
-  const workers = useMemo(() => {
-    const unique = new Set(responses.map(r => r.answers?.q1).filter(Boolean));
-    return Array.from(unique);
-  }, [responses]);
-
-  // Filtra risposte
-  const filteredResponses = useMemo(() => {
-    if (filterWorker === 'all') return responses;
-    return responses.filter(r => r.answers?.q1 === filterWorker);
-  }, [responses, filterWorker]);
-
-  // Analisi generale
-  const generalStats = useMemo(() => {
-    const workerScores: Record<string, { total: number; count: number }> = {};
-    
-    filteredResponses.forEach(r => {
-      const worker = r.answers?.q1 || 'Non specificato';
-      const score = calculateScore(r.answers);
-      if (!workerScores[worker]) {
-        workerScores[worker] = { total: 0, count: 0 };
-      }
-      workerScores[worker].total += score;
-      workerScores[worker].count += 1;
-    });
-
-    return Object.entries(workerScores).map(([worker, data]) => ({
-      worker,
-      score: Math.round(data.total / data.count),
-      count: data.count
-    })).sort((a, b) => b.score - a.score);
-  }, [filteredResponses]);
-
-  // Analisi per domanda
-  const questionAnalysis = useMemo(() => {
-    const questions = [
-      { id: 'q2', label: 'Qualità lavoro' },
-      { id: 'q3', label: 'Puntualità' },
-      { id: 'q4', label: 'Collaborazione' },
-      { id: 'q7', label: 'Valutazione complessiva' }
-    ];
-
-    return questions.map(q => {
-      const counts: Record<string, number> = {};
-      filteredResponses.forEach(r => {
-        const answer = r.answers?.[q.id];
-        if (answer) counts[answer] = (counts[answer] || 0) + 1;
+  const answersGroupedByQuestion = useMemo(() => {
+    if (selectedReparto === "all") return {};
+    const grouped: Record<string, { lavoratore: string; value: string | number | boolean | string[] }[]> = {};
+    responsesByReparto.forEach((r) => {
+      FULL_QUESTIONS.forEach((q) => {
+        const value = r.answers?.[q.id];
+        if (value !== undefined && value !== null && value !== "") {
+          if (!grouped[q.id]) grouped[q.id] = [];
+          grouped[q.id].push({
+            lavoratore: String(r.answers?.meta_nome) || "Sconosciuto",
+            value,
+          });
+        }
       });
-
-      const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
-      return { ...q, data };
     });
-  }, [filteredResponses]);
-
-  // Confronto temporale (ordina per data)
-  const timelineData = useMemo(() => {
-    const sorted = [...filteredResponses].sort((a, b) => {
-      const dateA = a.createdAt?.toDate?.() || new Date(0);
-      const dateB = b.createdAt?.toDate?.() || new Date(0);
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    return sorted.map((r, idx) => ({
-      index: idx + 1,
-      score: Math.round(calculateScore(r.answers)),
-      worker: r.answers?.q1 || 'N/A'
-    }));
-  }, [filteredResponses]);
+    return grouped;
+  }, [responsesByReparto, selectedReparto]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/5">
       <header className="bg-card border-b sticky top-0 z-50 backdrop-blur-sm bg-card/95">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Torna alla Dashboard
-          </Button>
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Torna alla Dashboard
+            </Button>
+            <h2 className="text-lg font-semibold">Analisi dettagliata</h2>
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Analisi e Confronto</h1>
-            <p className="text-muted-foreground">Analizza i dati reali dei questionari</p>
-          </div>
-          
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={filterWorker} onValueChange={setFilterWorker}>
-              <SelectTrigger className="w-full md:w-[250px]">
-                <SelectValue placeholder="Filtra per lavoratore/reparto" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
-                {workers.map(w => (
-                  <SelectItem key={w} value={w}>{w}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <Tabs value={tab} onValueChange={(v: "workers" | "reparti") => setTab(v)}>
+          <TabsList className="grid grid-cols-2 gap-2 w-full md:w-1/2">
+            <TabsTrigger value="workers">Per lavoratore</TabsTrigger>
+            <TabsTrigger value="reparti">Per reparto</TabsTrigger>
+          </TabsList>
 
-        {loading ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Caricamento dati in corso...
-            </CardContent>
-          </Card>
-        ) : responses.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground mb-4">Nessuna risposta disponibile ancora</p>
-              <Button onClick={() => navigate('/compile')}>
-                Compila il primo questionario
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <Tabs value={viewMode} onValueChange={(v: any) => setViewMode(v)} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="general">Generale</TabsTrigger>
-                <TabsTrigger value="worker">Per Lavoratore</TabsTrigger>
-                <TabsTrigger value="question">Per Domanda</TabsTrigger>
-              </TabsList>
+          {/* --- Per lavoratore --- */}
+          <TabsContent value="workers" className="mt-6 space-y-6">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={selectedWorker} onValueChange={setSelectedWorker}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Seleziona un lavoratore" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti</SelectItem>
+                  {workers.map((w) => (
+                    <SelectItem key={w} value={w}>{w}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <TabsContent value="general" className="space-y-6 mt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
+            {selectedWorker === "all" ? (
+              <Card><CardContent>Seleziona un lavoratore per vedere i dettagli.</CardContent></Card>
+            ) : (
+              responsesByWorker.map((resp) => (
+                <Card key={resp.id}>
+                  <CardHeader>
+                    <CardTitle>{resp.answers?.meta_nome}</CardTitle>
+                    <CardDescription>
+                      {resp.createdAt?.toDate ? format(resp.createdAt.toDate(), "dd/MM/yyyy HH:mm") : "Data non disponibile"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3">
+                      {FULL_QUESTIONS.map((q) => (
+                        <div key={q.id} className="p-2 rounded bg-white border">
+                          <div className="flex justify-between items-start">
+                            <div className="font-medium">{q.label}</div>
+                            <div className="text-sm text-muted-foreground">{renderAnswer(resp.answers?.[q.id])}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          {/* --- Per reparto --- */}
+          <TabsContent value="reparti" className="mt-6 space-y-6">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={selectedReparto} onValueChange={setSelectedReparto}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Seleziona un reparto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti</SelectItem>
+                  {reparti.map((r) => (
+                    <SelectItem key={String(r)} value={String(r)}>{String(r)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedReparto === "all" ? (
+              <Card><CardContent>Seleziona un reparto per vedere i dettagli.</CardContent></Card>
+            ) : (
+              FULL_QUESTIONS.map((q) => {
+                const answers = answersGroupedByQuestion[q.id] || [];
+                if (answers.length === 0) return null;
+                return (
+                  <Card key={q.id}>
                     <CardHeader>
-                      <CardTitle>Classifica Performance</CardTitle>
-                      <CardDescription>Punteggio medio per lavoratore/reparto</CardDescription>
+                      <CardTitle>{q.label}</CardTitle>
+                      <CardDescription>Risposte nel reparto {selectedReparto}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={generalStats} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis type="number" domain={[0, 100]} />
-                          <YAxis dataKey="worker" type="category" width={120} />
-                          <Tooltip />
-                          <Bar dataKey="score" fill="hsl(var(--primary))" name="Punteggio" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Trend Temporale</CardTitle>
-                      <CardDescription>Andamento punteggi nel tempo</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={timelineData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="index" label={{ value: 'Questionario #', position: 'insideBottom', offset: -5 }} />
-                          <YAxis domain={[0, 100]} />
-                          <Tooltip 
-                            formatter={(value: any) => [`${value}%`, 'Punteggio']}
-                            labelFormatter={(label) => `Questionario #${label}`}
-                          />
-                          <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="worker" className="space-y-6 mt-6">
-                {generalStats.map(worker => (
-                  <Card key={worker.worker}>
-                    <CardHeader>
-                      <CardTitle>{worker.worker}</CardTitle>
-                      <CardDescription>
-                        Punteggio medio: {worker.score}/100 ({worker.count} valutazioni)
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {questionAnalysis.map(q => {
-                          const workerResponses = responses
-                            .filter(r => r.answers?.q1 === worker.worker)
-                            .map(r => r.answers?.[q.id])
-                            .filter(Boolean);
-                          
-                          if (workerResponses.length === 0) return null;
-
-                          return (
-                            <div key={q.id} className="border-b pb-4 last:border-0">
-                              <h4 className="font-medium mb-2">{q.label}</h4>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                {workerResponses.map((answer, idx) => (
-                                  <div key={idx} className="bg-muted p-2 rounded">
-                                    {answer}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
+                      <div className="space-y-2">
+                        {answers.map((a, idx) => (
+                          <div key={idx} className="flex justify-between p-2 border-b last:border-0">
+                            <div className="font-medium">{a.lavoratore}</div>
+                            <div className="text-sm text-muted-foreground">{renderAnswer(a.value)}</div>
+                          </div>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </TabsContent>
-
-              <TabsContent value="question" className="space-y-6 mt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {questionAnalysis.map(q => (
-                    q.data.length > 0 && (
-                      <Card key={q.id}>
-                        <CardHeader>
-                          <CardTitle>{q.label}</CardTitle>
-                          <CardDescription>Distribuzione delle risposte</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                              <Pie
-                                data={q.data}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={80}
-                                dataKey="value"
-                              >
-                                {q.data.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                              </Pie>
-                              <Tooltip />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
-                    )
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
+                );
+              })
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
-};
-
-export default Analysis;
+}
