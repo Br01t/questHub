@@ -1,3 +1,4 @@
+// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -20,17 +21,17 @@ export default defineConfig(({ mode }) => ({
         "apple-touch-icon.png",
         "pwa-192x192.png",
         "pwa-512x512.png",
-        "pwa-512x512-maskable.png"
+        "pwa-512x512-maskable.png",
       ],
       manifest: {
-        name: "FeedbackApp",
-        short_name: "FeedbackApp",
+        name: "FeedbackFort",
+        short_name: "FeedbackFort",
         description: "Sistema di gestione e analisi questionari",
         theme_color: "#3b82f6",
         background_color: "#ffffff",
         display: "standalone",
         scope: "/feedback-fort/",
-        start_url: "/feedback-fort/",
+        start_url: "/feedback-fort/index.html",
         orientation: "portrait",
         icons: [
           {
