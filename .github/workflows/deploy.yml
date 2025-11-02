@@ -3,7 +3,7 @@ name: Deploy Vite React app to GitHub Pages
 on:
   push:
     branches:
-      - main  # oppure 'master' se usi quel branch
+      - main  # oppure 'master'
 
 permissions:
   contents: write
@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: npm run build
+        run: npm run build -- --mode production  # 👈 forza modalità prod
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
