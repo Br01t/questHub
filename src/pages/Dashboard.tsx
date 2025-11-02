@@ -202,7 +202,7 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">FeedbackFort</h1>
+            <h1 className="text-xl font-bold">FeedbackApp</h1>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />

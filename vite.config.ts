@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => ({
         "pwa-512x512-maskable.png"
       ],
       manifest: {
-        name: "FeedbackFort",
-        short_name: "FeedbackFort",
+        name: "FeedbackApp",
+        short_name: "FeedbackApp",
         description: "Sistema di gestione e analisi questionari",
         theme_color: "#3b82f6",
         background_color: "#ffffff",

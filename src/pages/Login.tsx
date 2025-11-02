@@ -47,7 +47,7 @@ const Login = () => {
               <ClipboardList className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">FeedbackFort</CardTitle>
+          <CardTitle className="text-2xl font-bold">FeedbackApp</CardTitle>
           <CardDescription>Sistema di gestione questionari</CardDescription>
         </CardHeader>
         <CardContent>
