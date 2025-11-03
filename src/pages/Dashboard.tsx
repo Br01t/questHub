@@ -195,23 +195,36 @@ const Dashboard = () => {
     return { satisfactionData, averageScore };
   }, [responses]);
 
-  return (
+    return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
       <header className="border-b bg-card/80 backdrop-blur-md shadow-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-5 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary-glow">
-              <ClipboardList className="h-6 w-6 text-white" />
+        <div
+          className="container mx-auto px-4 py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
+            <div className="flex justify-center sm:justify-start">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary-glow">
+                <ClipboardList className="h-6 w-6 text-white" />
+              </div>
             </div>
             <div>
-              <h1 className="text-xl font-bold">QuestHub</h1>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <h1 className="text-xl font-bold leading-tight">QuestHub</h1>
+              <p className="text-xs text-muted-foreground break-all">
+                {user?.email}
+              </p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            Esci
-          </Button>
+
+          <div className="flex justify-center sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="gap-2 w-full sm:w-auto"
+            >
+              <LogOut className="h-4 w-4" />
+              Esci
+            </Button>
+          </div>
         </div>
       </header>
 

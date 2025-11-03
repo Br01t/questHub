@@ -156,16 +156,33 @@ const CompileQuestionnaire: React.FC = () => {
     sections[q.section].push(q);
   });
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
-      <header className="bg-card/80 backdrop-blur-md border-b sticky top-0 z-50 shadow-md">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Torna alla Dashboard
-          </Button>
-        </div>
-      </header>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
+        <header className="border-b bg-card/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
+              <div className="flex justify-center sm:justify-start">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary-glow">
+                  <Send className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <h1 className="text-xl font-bold leading-tight">
+                Compilazione Checklist VDT
+              </h1>
+            </div>
+
+            <div className="flex justify-center sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/dashboard')}
+                className="gap-2 w-full sm:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Dashboard
+              </Button>
+            </div>
+          </div>
+        </header>
 
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <Card className="shadow-xl border-2">

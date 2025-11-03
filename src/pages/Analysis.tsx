@@ -325,22 +325,31 @@ export default function Analysis() {
       );
     };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
-      <header className="border-b bg-card/80 backdrop-blur-md shadow-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-5 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary-glow">
-              <BarChart3 className="h-6 w-6 text-white" />
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
+        <header className="border-b bg-card/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
+              <div className="flex justify-center sm:justify-start">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary-glow">
+                  <BarChart3 className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <h1 className="text-xl font-bold leading-tight">Analisi e Statistiche</h1>
             </div>
-            <h1 className="text-xl font-bold">Analisi e Statistiche</h1>
+
+            <div className="flex justify-center sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/dashboard")}
+                className="gap-2 w-full sm:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Dashboard
+              </Button>
+            </div>
           </div>
-          <Button variant="outline" onClick={() => navigate('/dashboard')} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Dashboard
-          </Button>
-        </div>
-      </header>
+        </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Filtro Date */}
@@ -352,7 +361,7 @@ export default function Analysis() {
             </CardTitle>
             <CardDescription>Filtra le analisi per periodo di compilazione</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 overflow-x-hidden px-2 sm:px-4">
             <div className="flex flex-wrap gap-4 items-end">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">Data inizio</label>
@@ -430,7 +439,7 @@ export default function Analysis() {
             <CardTitle>Seleziona Vista Analisi</CardTitle>
             <CardDescription>Scegli come visualizzare i dati raccolti</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 overflow-x-hidden px-2 sm:px-4">
             <div className="flex justify-end mb-4">
               <Button
                 variant="default"
@@ -454,64 +463,66 @@ export default function Analysis() {
 
               {/* --- Per lavoratore --- */}
               <TabsContent value="workers" className="mt-8 space-y-6">
-                <div className="flex items-center gap-3 p-4 bg-accent/5 rounded-lg border">
-                  <Search className="h-5 w-5 text-primary" />
-                  <Popover open={openWorker} onOpenChange={setOpenWorker}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openWorker}
-                        className="w-[300px] justify-between"
-                      >
-                        {selectedWorker === "all" ? "Seleziona un lavoratore..." : selectedWorker}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Cerca lavoratore..." />
-                        <CommandList>
-                          <CommandEmpty>Nessun lavoratore trovato.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value="all"
-                              onSelect={() => {
-                                setSelectedWorker("all");
-                                setOpenWorker(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedWorker === "all" ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              Tutti
-                            </CommandItem>
-                            {workers.map((w) => (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-accent/5 rounded-lg border w-full">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Search className="h-5 w-5 text-primary shrink-0" />
+                    <Popover open={openWorker} onOpenChange={setOpenWorker}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openWorker}
+                          className="w-full sm:w-[300px] justify-between"
+                        >
+                          {selectedWorker === "all" ? "Cerca..." : selectedWorker}
+                          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full sm:w-[300px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Cerca lavoratore..." />
+                          <CommandList>
+                            <CommandEmpty>Nessun lavoratore trovato.</CommandEmpty>
+                            <CommandGroup>
                               <CommandItem
-                                key={w}
-                                value={w}
-                                onSelect={(currentValue) => {
-                                  setSelectedWorker(currentValue);
+                                value="all"
+                                onSelect={() => {
+                                  setSelectedWorker("all");
                                   setOpenWorker(false);
                                 }}
                               >
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    selectedWorker === w ? "opacity-100" : "opacity-0"
+                                    selectedWorker === "all" ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                {w}
+                                Tutti
                               </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                              {workers.map((w) => (
+                                <CommandItem
+                                  key={w}
+                                  value={w}
+                                  onSelect={(currentValue) => {
+                                    setSelectedWorker(currentValue);
+                                    setOpenWorker(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedWorker === w ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {w}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
 
                 {selectedWorker === "all" ? (
@@ -529,13 +540,15 @@ export default function Analysis() {
                           Compilato il {resp.createdAt?.toDate ? format(resp.createdAt.toDate(), "dd/MM/yyyy 'alle' HH:mm") : "Data non disponibile"}
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="pt-6">
+                      <CardContent className="pt-6 overflow-x-hidden px-2 sm:px-4">
                         <div className="grid gap-4">
                           {FULL_QUESTIONS.map((q) => (
-                            <div key={q.id} className="p-3 rounded-lg bg-card border-2 hover:border-primary/30 transition-colors">
-                              <div className="flex justify-between items-start">
+                            <div key={q.id} className="p-3 rounded-lg bg-card border-2 hover:border-primary/30 transition-colors break-words overflow-hidden text-wrap">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
                                 <div className="font-medium">{q.label}</div>
-                                <div className="text-sm text-muted-foreground">{renderAnswer(resp.answers?.[q.id])}</div>
+                                <div className="text-sm text-muted-foreground max-w-full break-all">
+                                  {renderAnswer(resp.answers?.[q.id])}
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -548,64 +561,66 @@ export default function Analysis() {
 
               {/* --- Per reparto --- */}
               <TabsContent value="reparti" className="mt-8 space-y-6">
-                <div className="flex items-center gap-3 p-4 bg-accent/5 rounded-lg border">
-                  <Search className="h-5 w-5 text-primary" />
-                  <Popover open={openReparto} onOpenChange={setOpenReparto}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openReparto}
-                        className="w-[300px] justify-between"
-                      >
-                        {selectedReparto === "all" ? "Seleziona un reparto..." : selectedReparto}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Cerca reparto..." />
-                        <CommandList>
-                          <CommandEmpty>Nessun reparto trovato.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value="all"
-                              onSelect={() => {
-                                setSelectedReparto("all");
-                                setOpenReparto(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedReparto === "all" ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              Tutti
-                            </CommandItem>
-                            {reparti.map((r) => (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-accent/5 rounded-lg border w-full">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Search className="h-5 w-5 text-primary shrink-0" />
+                    <Popover open={openReparto} onOpenChange={setOpenReparto}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openReparto}
+                          className="w-full sm:w-[300px] justify-between"
+                        >
+                          {selectedReparto === "all" ? "Cerca..." : selectedReparto}
+                          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full sm:w-[300px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Cerca reparto..." />
+                          <CommandList>
+                            <CommandEmpty>Nessun reparto trovato.</CommandEmpty>
+                            <CommandGroup>
                               <CommandItem
-                                key={String(r)}
-                                value={String(r)}
-                                onSelect={(currentValue) => {
-                                  setSelectedReparto(currentValue);
+                                value="all"
+                                onSelect={() => {
+                                  setSelectedReparto("all");
                                   setOpenReparto(false);
                                 }}
                               >
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    selectedReparto === String(r) ? "opacity-100" : "opacity-0"
+                                    selectedReparto === "all" ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                {String(r)}
+                                Tutti
                               </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                              {reparti.map((r) => (
+                                <CommandItem
+                                  key={String(r)}
+                                  value={String(r)}
+                                  onSelect={(currentValue) => {
+                                    setSelectedReparto(currentValue);
+                                    setOpenReparto(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedReparto === String(r) ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {String(r)}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
 
                 {selectedReparto === "all" ? (
@@ -624,12 +639,12 @@ export default function Analysis() {
                           <CardTitle className="text-lg">{q.label}</CardTitle>
                           <CardDescription>Risposte nel reparto {selectedReparto}</CardDescription>
                         </CardHeader>
-                        <CardContent className="pt-4">
+                        <CardContent className="pt-4 overflow-x-hidden px-2 sm:px-4">
                           <div className="space-y-2">
                             {answers.map((a, idx) => (
-                              <div key={idx} className="flex justify-between items-center p-3 border-b last:border-0 hover:bg-accent/5 transition-colors rounded">
+                              <div key={idx} className="flex justify-between items-center p-3 border-b last:border-0 hover:bg-accent/5 transition-colors rounded break-words text-wrap">
                                 <div className="font-medium text-sm">{a.lavoratore}</div>
-                                <div className="text-sm text-muted-foreground">{renderAnswer(a.value)}</div>
+                                <div className="text-sm text-muted-foreground max-w-full break-all">{renderAnswer(a.value)}</div>
                               </div>
                             ))}
                           </div>
