@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => ({
         background_color: "#ffffff",
         display: "standalone",
         scope: "/questHub/",
-        start_url: "/questHub/index.html",
+        start_url: "/questHub/",
         orientation: "portrait",
         icons: [
           {
