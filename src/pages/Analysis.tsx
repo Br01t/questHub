@@ -10,17 +10,24 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { ArrowLeft, Filter } from "lucide-react";
+import { ArrowLeft, Search, Check } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 type AnswerValue = string | number | boolean | string[] | null | undefined;
 
@@ -95,6 +102,8 @@ export default function Analysis() {
   const [tab, setTab] = useState<"workers" | "reparti">("workers");
   const [selectedWorker, setSelectedWorker] = useState<string>("all");
   const [selectedReparto, setSelectedReparto] = useState<string>("all");
+  const [openWorker, setOpenWorker] = useState(false);
+  const [openReparto, setOpenReparto] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -186,18 +195,63 @@ export default function Analysis() {
           {/* --- Per lavoratore --- */}
           <TabsContent value="workers" className="mt-6 space-y-6">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedWorker} onValueChange={setSelectedWorker}>
-                <SelectTrigger className="w-[250px]">
-                  <SelectValue placeholder="Seleziona un lavoratore" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti</SelectItem>
-                  {workers.map((w) => (
-                    <SelectItem key={w} value={w}>{w}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Popover open={openWorker} onOpenChange={setOpenWorker}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openWorker}
+                    className="w-[300px] justify-between"
+                  >
+                    {selectedWorker === "all" ? "Seleziona un lavoratore..." : selectedWorker}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Cerca lavoratore..." />
+                    <CommandList>
+                      <CommandEmpty>Nessun lavoratore trovato.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSelectedWorker("all");
+                            setOpenWorker(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedWorker === "all" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Tutti
+                        </CommandItem>
+                        {workers.map((w) => (
+                          <CommandItem
+                            key={w}
+                            value={w}
+                            onSelect={(currentValue) => {
+                              setSelectedWorker(currentValue);
+                              setOpenWorker(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedWorker === w ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {w}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {selectedWorker === "all" ? (
@@ -231,18 +285,63 @@ export default function Analysis() {
           {/* --- Per reparto --- */}
           <TabsContent value="reparti" className="mt-6 space-y-6">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedReparto} onValueChange={setSelectedReparto}>
-                <SelectTrigger className="w-[250px]">
-                  <SelectValue placeholder="Seleziona un reparto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti</SelectItem>
-                  {reparti.map((r) => (
-                    <SelectItem key={String(r)} value={String(r)}>{String(r)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Popover open={openReparto} onOpenChange={setOpenReparto}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openReparto}
+                    className="w-[300px] justify-between"
+                  >
+                    {selectedReparto === "all" ? "Seleziona un reparto..." : selectedReparto}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Cerca reparto..." />
+                    <CommandList>
+                      <CommandEmpty>Nessun reparto trovato.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSelectedReparto("all");
+                            setOpenReparto(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedReparto === "all" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Tutti
+                        </CommandItem>
+                        {reparti.map((r) => (
+                          <CommandItem
+                            key={String(r)}
+                            value={String(r)}
+                            onSelect={(currentValue) => {
+                              setSelectedReparto(currentValue);
+                              setOpenReparto(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedReparto === String(r) ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {String(r)}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {selectedReparto === "all" ? (
