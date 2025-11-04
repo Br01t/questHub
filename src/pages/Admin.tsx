@@ -205,6 +205,7 @@ const Admin = () => {
     try {
       await updateDoc(doc(db, 'userProfiles', userId), {
         companyId: companyId || null,
+        siteId: null, // Reset sede quando cambia azienda
       });
       
       loadData();
@@ -218,6 +219,27 @@ const Admin = () => {
         variant: 'destructive',
         title: 'Errore',
         description: 'Impossibile assegnare l\'azienda',
+      });
+    }
+  };
+
+  const assignSiteToUser = async (userId: string, siteId: string) => {
+    try {
+      await updateDoc(doc(db, 'userProfiles', userId), {
+        siteId: siteId || null,
+      });
+      
+      loadData();
+      toast({
+        title: 'Sede assegnata',
+        description: 'Utente associato alla sede',
+      });
+    } catch (error) {
+      console.error('Errore assegnazione sede:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: 'Impossibile assegnare la sede',
       });
     }
   };
@@ -424,6 +446,9 @@ const Admin = () => {
                   <div className="space-y-3">
                     {users.map((userProfile) => {
                       const company = companies.find(c => c.id === userProfile.companyId);
+                      const site = sites.find(s => s.id === userProfile.siteId);
+                      const userCompanySites = sites.filter(s => s.companyId === userProfile.companyId);
+                      
                       return (
                         <div key={userProfile.userId} className="p-4 border rounded-lg space-y-3">
                           <div className="flex items-center justify-between">
@@ -435,6 +460,12 @@ const Admin = () => {
                                 </Badge>
                                 {company && (
                                   <Badge variant="outline">{company.name}</Badge>
+                                )}
+                                {site && (
+                                  <Badge variant="outline" className="bg-primary/5">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    {site.name}
+                                  </Badge>
                                 )}
                               </div>
                             </div>
@@ -448,24 +479,46 @@ const Admin = () => {
                               {userProfile.role === 'super_admin' ? 'Rimuovi Admin' : 'Rendi Admin'}
                             </Button>
                           </div>
-                          <div className="space-y-2">
-                            <Label className="text-xs">Assegna Azienda</Label>
-                            <Select
-                              value={userProfile.companyId || ''}
-                              onValueChange={(value) => assignCompanyToUser(userProfile.userId, value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Nessuna azienda" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">Nessuna azienda</SelectItem>
-                                {companies.map((company) => (
-                                  <SelectItem key={company.id} value={company.id}>
-                                    {company.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Assegna Azienda</Label>
+                              <Select
+                                value={userProfile.companyId || ''}
+                                onValueChange={(value) => assignCompanyToUser(userProfile.userId, value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Nessuna azienda" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Nessuna azienda</SelectItem>
+                                  {companies.map((company) => (
+                                    <SelectItem key={company.id} value={company.id}>
+                                      {company.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Assegna Sede</Label>
+                              <Select
+                                value={userProfile.siteId || ''}
+                                onValueChange={(value) => assignSiteToUser(userProfile.userId, value)}
+                                disabled={!userProfile.companyId}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={userProfile.companyId ? "Nessuna sede" : "Seleziona prima un'azienda"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Nessuna sede</SelectItem>
+                                  {userCompanySites.map((site) => (
+                                    <SelectItem key={site.id} value={site.id}>
+                                      {site.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
                       );

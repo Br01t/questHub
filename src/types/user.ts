@@ -19,6 +19,6 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   companyId?: string;
-  allowedSiteIds?: string[];
+  siteId?: string;
   createdAt: Date;
 }

@@ -80,7 +80,7 @@ const questions: Question[] = [
 ] as const;
 
 const CompileQuestionnaire: React.FC = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -141,6 +141,8 @@ const CompileQuestionnaire: React.FC = () => {
       await addDoc(collection(db, 'responses'), {
         userId: user?.uid ?? null,
         userEmail: user?.email ?? null,
+        companyId: userProfile?.companyId ?? null,
+        siteId: userProfile?.siteId ?? null,
         formId: 'checklist_vdt_v1',
         answers: completeAnswers,
         createdAt: serverTimestamp(),
