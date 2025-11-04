@@ -20,9 +20,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Search, Check } from "lucide-react";
+import { Search, Check, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type AnswerValue = string | number | boolean | string[] | null | undefined;
 
@@ -30,11 +32,12 @@ type ResponseDoc = {
   id: string;
   createdAt?: { toDate: () => Date };
   answers?: Record<string, AnswerValue>;
-  userEmail?: string | null;
-  userId?: string | null;
 };
 
-// Tutte le domande (come prima)
+interface WorkerAnalysisProps {
+  filteredResponses: ResponseDoc[];
+}
+
 const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "meta_nome", label: "Nome valutato / lavoratore" },
   { id: "meta_postazione", label: "Postazione n." },
@@ -89,10 +92,6 @@ const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "foto_postazione", label: "Foto della postazione (URL/nota)" },
 ];
 
-interface WorkerAnalysisProps {
-  filteredResponses: ResponseDoc[];
-}
-
 export default function WorkerAnalysis({ filteredResponses }: WorkerAnalysisProps) {
   const [selectedWorker, setSelectedWorker] = useState<string>("all");
   const [openWorker, setOpenWorker] = useState(false);
@@ -120,14 +119,10 @@ export default function WorkerAnalysis({ filteredResponses }: WorkerAnalysisProp
       );
   }, [filteredResponses, selectedWorker]);
 
-  const dates = useMemo(
-    () =>
-      responsesByWorker.map((r) =>
-        r.createdAt?.toDate()
-          ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm")
-          : "N/D"
-      ),
-    [responsesByWorker]
+  const dates = responsesByWorker.map((r) =>
+    r.createdAt?.toDate()
+      ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm")
+      : "N/D"
   );
 
   const renderAnswer = (val: AnswerValue) => {
@@ -136,25 +131,67 @@ export default function WorkerAnalysis({ filteredResponses }: WorkerAnalysisProp
     return String(val);
   };
 
-  // 🔸 Funzione per capire se una domanda è testuale (da ignorare nei cambi)
   const isTextQuestion = (id: string): boolean =>
-    id.includes("_note") ||
-    id.startsWith("meta_") ||
-    id === "foto_postazione";
+    id.includes("_note") || id.startsWith("meta_") || id === "foto_postazione";
 
-  // 🔸 Evidenzia solo se la domanda NON è testuale e le risposte differiscono
   const hasDifferentAnswers = (questionId: string): boolean => {
     if (isTextQuestion(questionId)) return false;
-    const values = responsesByWorker.map((r) =>
-      renderAnswer(r.answers?.[questionId])
-    );
+    const values = responsesByWorker.map((r) => renderAnswer(r.answers?.[questionId]));
     return new Set(values).size > 1;
+  };
+
+  // 🔹 Esporta PDF
+  const generatePDF = () => {
+    if (selectedWorker === "all" || responsesByWorker.length === 0) return;
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+    doc.setFontSize(16);
+    doc.text(`Report questionari: ${selectedWorker}`, 14, 20);
+    doc.setFontSize(11);
+    doc.text(`Date compilazioni: ${dates.join(", ")}`, 14, 28);
+
+    const body = FULL_QUESTIONS.map((q) => {
+      const answers = responsesByWorker.map((r) => renderAnswer(r.answers?.[q.id]));
+      return [q.label, ...answers];
+    });
+
+    autoTable(doc, {
+      startY: 35,
+      head: [["Domanda", ...dates]],
+      body,
+      styles: { fontSize: 8, cellPadding: 2 },
+      theme: "striped",
+      didParseCell: (data) => {
+        const q = FULL_QUESTIONS[data.row.index];
+        if (hasDifferentAnswers(q.id) && data.section === "body") {
+          data.cell.styles.fillColor = [255, 255, 180];
+        }
+      },
+    });
+
+    doc.setFontSize(8);
+    doc.text(`Generato il ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 290);
+    doc.save(`report_${selectedWorker}_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
     <div className="space-y-6">
-      {/* Filtro lavoratore */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-accent/5 rounded-lg border w-full">
+      {/* Pulsante PDF */}
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="default"
+          className="gap-2"
+          onClick={generatePDF}
+          disabled={selectedWorker === "all"}
+        >
+          <BarChart3 className="h-4 w-4" />
+          Esporta PDF
+        </Button>
+      </div>
+
+      {/* Selettore lavoratore */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-accent/5 rounded-lg border">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Search className="h-5 w-5 text-primary shrink-0" />
           <Popover open={openWorker} onOpenChange={setOpenWorker}>
@@ -183,10 +220,7 @@ export default function WorkerAnalysis({ filteredResponses }: WorkerAnalysisProp
                       }}
                     >
                       <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedWorker === "all" ? "opacity-100" : "opacity-0"
-                        )}
+                        className={cn("mr-2 h-4 w-4", selectedWorker === "all" ? "opacity-100" : "opacity-0")}
                       />
                       Tutti
                     </CommandItem>
@@ -194,16 +228,13 @@ export default function WorkerAnalysis({ filteredResponses }: WorkerAnalysisProp
                       <CommandItem
                         key={w}
                         value={w}
-                        onSelect={(currentValue) => {
-                          setSelectedWorker(currentValue);
+                        onSelect={(v) => {
+                          setSelectedWorker(v);
                           setOpenWorker(false);
                         }}
                       >
                         <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedWorker === w ? "opacity-100" : "opacity-0"
-                          )}
+                          className={cn("mr-2 h-4 w-4", selectedWorker === w ? "opacity-100" : "opacity-0")}
                         />
                         {w}
                       </CommandItem>
@@ -219,27 +250,21 @@ export default function WorkerAnalysis({ filteredResponses }: WorkerAnalysisProp
       {/* Tabella comparativa */}
       {selectedWorker === "all" ? (
         <Card className="shadow-md">
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              Seleziona un lavoratore per vedere le risposte comparate.
-            </p>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Seleziona un lavoratore per visualizzare e scaricare il report.
           </CardContent>
         </Card>
       ) : (
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
-            <CardTitle className="text-xl">{selectedWorker}</CardTitle>
-            <CardDescription className="text-sm">
-              Confronto questionari: {dates.join(", ")}
-            </CardDescription>
+            <CardTitle>{selectedWorker}</CardTitle>
+            <CardDescription>Confronto questionari: {dates.join(", ")}</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6 overflow-x-auto px-2 sm:px-4">
+          <CardContent className="pt-6 overflow-x-auto">
             <table className="min-w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-accent/30 border-b">
-                  <th className="text-left p-2 border-r font-semibold w-1/3">
-                    Domanda
-                  </th>
+                  <th className="text-left p-2 border-r font-semibold w-1/3">Domanda</th>
                   {dates.map((d) => (
                     <th key={d} className="text-center p-2 border-r font-semibold">
                       {d}
@@ -258,14 +283,9 @@ export default function WorkerAnalysis({ filteredResponses }: WorkerAnalysisProp
                         changed ? "bg-yellow-100/70" : ""
                       )}
                     >
-                      <td className="p-2 border-r align-top font-medium">
-                        {q.label}
-                      </td>
+                      <td className="p-2 border-r align-top font-medium">{q.label}</td>
                       {responsesByWorker.map((resp) => (
-                        <td
-                          key={resp.id + q.id}
-                          className="p-2 text-center border-r align-top"
-                        >
+                        <td key={resp.id + q.id} className="p-2 text-center border-r align-top">
                           {renderAnswer(resp.answers?.[q.id])}
                         </td>
                       ))}

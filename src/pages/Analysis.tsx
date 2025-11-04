@@ -211,8 +211,6 @@ export default function Analysis() {
               <TabsContent value="workers" className="mt-8">
                 <WorkerAnalysis 
                   filteredResponses={filteredResponses}
-                  dateFrom={dateFrom}
-                  dateTo={dateTo}
                 />
               </TabsContent>
 
