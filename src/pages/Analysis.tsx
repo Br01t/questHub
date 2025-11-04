@@ -204,7 +204,7 @@ export default function Analysis() {
           </CardHeader>
           <CardContent className="pt-6 overflow-x-hidden px-2 sm:px-4">
             <Tabs value={tab} onValueChange={(v: "workers" | "reparti") => setTab(v)}>
-              <TabsList className="grid grid-cols-2 gap-2 w-full md:w-1/2">
+              <TabsList className="grid grid-cols-3 gap-2 w-full md:w-1/2">
                 <TabsTrigger value="workers">Per Lavoratore</TabsTrigger>
                 <TabsTrigger value="reparti">Per Reparto</TabsTrigger>
                 <TabsTrigger value="traReparti">Tra Reparti</TabsTrigger>

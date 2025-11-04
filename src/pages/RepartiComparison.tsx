@@ -159,9 +159,6 @@ const RepartiComparison = () => {
       <header className="border-b bg-card/80 backdrop-blur-md shadow-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <h1 className="text-xl font-bold leading-tight">Analisi Tra Reparti</h1>
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Dashboard
-          </Button>
         </div>
       </header>
 
