@@ -58,6 +58,27 @@ const Admin = () => {
   const [newSiteAddress, setNewSiteAddress] = useState("");
   const [selectedCompanyForSite, setSelectedCompanyForSite] = useState("");
 
+  const deleteUserProfile = async (userId: string, email: string) => {
+    if (!confirm(`Sei sicuro di voler eliminare l'utente ${email}?`)) return;
+
+    try {
+      await deleteDoc(doc(db, "userProfiles", userId));
+      loadData();
+
+      toast({
+        title: "Utente eliminato",
+        description: `Il profilo ${email} è stato eliminato con successo.`,
+      });
+    } catch (error) {
+      console.error("Errore eliminazione utente:", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile eliminare l'utente",
+      });
+    }
+  };
+
   useEffect(() => {
     if (!user || !isSuperAdmin) {
       navigate("/dashboard");
@@ -599,7 +620,7 @@ const Admin = () => {
                           key={userProfile.userId}
                           className="p-4 border rounded-lg space-y-3"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-start justify-between">
                             <div>
                               <p className="font-semibold">
                                 {userProfile.email}
@@ -632,26 +653,45 @@ const Admin = () => {
                                 )}
                               </div>
                             </div>
-                            <Button
-                              variant={
-                                userProfile.role === "super_admin"
-                                  ? "outline"
-                                  : "default"
-                              }
-                              size="sm"
-                              onClick={() =>
-                                toggleSuperAdmin(
-                                  userProfile.userId,
-                                  userProfile.role
-                                )
-                              }
-                              className="gap-2"
-                            >
-                              <Shield className="h-4 w-4" />
-                              {userProfile.role === "super_admin"
-                                ? "Rimuovi Admin"
-                                : "Rendi Admin"}
-                            </Button>
+
+                            {/* Pulsanti a destra, uno sopra l’altro */}
+                            <div className="flex flex-col items-end gap-2">
+                              <Button
+                                variant={
+                                  userProfile.role === "super_admin"
+                                    ? "outline"
+                                    : "default"
+                                }
+                                size="sm"
+                                onClick={() =>
+                                  toggleSuperAdmin(
+                                    userProfile.userId,
+                                    userProfile.role
+                                  )
+                                }
+                                className="gap-2 w-40 justify-center"
+                              >
+                                <Shield className="h-4 w-4" />
+                                {userProfile.role === "super_admin"
+                                  ? "Rimuovi Admin"
+                                  : "Rendi Admin"}
+                              </Button>
+
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() =>
+                                  deleteUserProfile(
+                                    userProfile.userId,
+                                    userProfile.email
+                                  )
+                                }
+                                className="gap-2 w-40 justify-center"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Elimina
+                              </Button>
+                            </div>
                           </div>
 
                           {/* Assegna Azienda */}
