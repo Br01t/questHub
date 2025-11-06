@@ -35,10 +35,12 @@ type ResponseDoc = {
   answers?: Record<string, AnswerValue>;
   userEmail?: string | null;
   userId?: string | null;
+  companyId?: string | null;
+  siteId?: string | null;
 };
 
 export default function Analysis() {
-  const { user } = useAuth();
+  const { user, userProfile, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [responses, setResponses] = useState<ResponseDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,30 @@ export default function Analysis() {
 
   const filteredResponses = useMemo(() => {
     let filtered = responses;
+    
+    // Filtro per permessi utente
+    if (!isSuperAdmin && userProfile) {
+      filtered = filtered.filter((r) => {
+        // Se l'utente ha un'azienda assegnata, mostra solo le risposte di quella azienda
+        if (userProfile.companyId && r.companyId !== userProfile.companyId) {
+          return false;
+        }
+        
+        // Se l'utente ha sedi assegnate, mostra solo le risposte di quelle sedi
+        if (userProfile.siteIds && userProfile.siteIds.length > 0) {
+          return r.siteId && userProfile.siteIds.includes(r.siteId);
+        }
+        
+        // Se l'utente ha una sede singola assegnata (compatibilità)
+        if (userProfile.siteId && r.siteId !== userProfile.siteId) {
+          return false;
+        }
+        
+        return true;
+      });
+    }
+    
+    // Filtro per date
     if (dateFrom) {
       filtered = filtered.filter((r) => {
         if (!r.createdAt?.toDate) return false;
@@ -88,7 +114,7 @@ export default function Analysis() {
       });
     }
     return filtered;
-  }, [responses, dateFrom, dateTo]);
+  }, [responses, dateFrom, dateTo, userProfile, isSuperAdmin]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
