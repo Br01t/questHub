@@ -7,6 +7,8 @@ interface Response {
   answers: {
     [key: string]: string | string[];
   };
+  companyId?: string;
+  siteId?: string;
 }
 import {
   Card,
@@ -31,7 +33,22 @@ import {
 } from "recharts";
 import { collection, query, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { ClipboardList, FileText, LogOut, Users, PenSquare, BarChart3, Shield, Building2 } from "lucide-react";
+import { ClipboardList, FileText, LogOut, Users, PenSquare, BarChart3, Shield, Building2, MapPin, ChevronDown, Check } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+import { doc, getDoc } from "firebase/firestore";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -95,33 +112,115 @@ const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "10_note", label: "10 - Osservazioni (note)" },
 ];
 
+interface Company {
+  id: string;
+  name: string;
+}
+
+interface CompanySite {
+  id: string;
+  name: string;
+  companyId: string;
+}
+
 const Dashboard = () => {
   const { user, userProfile, isSuperAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState<string>('');
+  
+  // Stati per selezione azienda e sede
+  const [availableCompanies, setAvailableCompanies] = useState<Company[]>([]);
+  const [availableSites, setAvailableSites] = useState<CompanySite[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [selectedSiteId, setSelectedSiteId] = useState<string>('');
+  const [openCompany, setOpenCompany] = useState(false);
+  const [openSite, setOpenSite] = useState(false);
 
   useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
+    loadAvailableCompaniesAndSites();
     loadResponses();
-    loadCompanyName();
   }, [user, navigate]);
+  
+  useEffect(() => {
+    if (selectedCompanyId) {
+      loadAvailableSitesForCompany(selectedCompanyId);
+      updateCompanyName(selectedCompanyId);
+    }
+  }, [selectedCompanyId]);
 
-  const loadCompanyName = async () => {
-    if (userProfile?.companyId) {
-      try {
-        const companyDoc = await getDocs(query(collection(db, 'companies')));
-        const company = companyDoc.docs.find(doc => doc.id === userProfile.companyId);
-        if (company) {
-          setCompanyName(company.data().name);
-        }
-      } catch (error) {
-        console.error('Errore caricamento company:', error);
+  const loadAvailableCompaniesAndSites = async () => {
+    try {
+      // Carica tutte le aziende se super admin, altrimenti solo quella assegnata
+      const companiesSnapshot = await getDocs(query(collection(db, 'companies')));
+      let companies = companiesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Company[];
+      
+      if (!isSuperAdmin && userProfile?.companyId) {
+        companies = companies.filter(c => c.id === userProfile.companyId);
       }
+      
+      setAvailableCompanies(companies);
+      
+      // Imposta azienda di default
+      if (companies.length > 0) {
+        const defaultCompany = userProfile?.companyId && companies.find(c => c.id === userProfile.companyId)
+          ? userProfile.companyId
+          : companies[0].id;
+        setSelectedCompanyId(defaultCompany);
+      }
+    } catch (error) {
+      console.error('Errore caricamento aziende:', error);
+    }
+  };
+  
+  const loadAvailableSitesForCompany = async (companyId: string) => {
+    try {
+      const sitesSnapshot = await getDocs(query(collection(db, 'companySites')));
+      let sites = sitesSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() })) as CompanySite[];
+      
+      // Filtra per azienda selezionata
+      sites = sites.filter(s => s.companyId === companyId);
+      
+      // Se non è super admin, filtra anche per sedi assegnate
+      if (!isSuperAdmin && userProfile?.siteIds && userProfile.siteIds.length > 0) {
+        sites = sites.filter(s => userProfile.siteIds.includes(s.id));
+      } else if (!isSuperAdmin && userProfile?.siteId) {
+        sites = sites.filter(s => s.id === userProfile.siteId);
+      }
+      
+      setAvailableSites(sites);
+      
+      // Imposta sede di default
+      if (sites.length > 0) {
+        const defaultSite = userProfile?.siteId && sites.find(s => s.id === userProfile.siteId)
+          ? userProfile.siteId
+          : sites[0].id;
+        setSelectedSiteId(defaultSite);
+      } else {
+        setSelectedSiteId('');
+      }
+    } catch (error) {
+      console.error('Errore caricamento sedi:', error);
+    }
+  };
+  
+  const updateCompanyName = async (companyId: string) => {
+    try {
+      const companyDoc = await getDoc(doc(db, 'companies', companyId));
+      if (companyDoc.exists()) {
+        setCompanyName(companyDoc.data().name);
+      }
+    } catch (error) {
+      console.error('Errore caricamento nome azienda:', error);
     }
   };
 
@@ -146,10 +245,25 @@ const Dashboard = () => {
     await logout();
     navigate("/login");
   };
+  
+  // Filtra le risposte in base alla selezione di azienda e sede
+  const filteredResponses = useMemo(() => {
+    let filtered = responses;
+    
+    if (selectedCompanyId) {
+      filtered = filtered.filter(r => r.companyId === selectedCompanyId);
+    }
+    
+    if (selectedSiteId) {
+      filtered = filtered.filter(r => r.siteId === selectedSiteId);
+    }
+    
+    return filtered;
+  }, [responses, selectedCompanyId, selectedSiteId]);
 
   const groupedByQuestion = useMemo(() => {
     const grouped: Record<string, Record<string, number>> = {};
-    responses.forEach((r) => {
+    filteredResponses.forEach((r) => {
       const answers = r.answers || {};
       FULL_QUESTIONS.forEach((q) => {
         const val = answers[q.id];
@@ -170,14 +284,14 @@ const Dashboard = () => {
       const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
       return { id: q.id, label: q.label, total: data.reduce((s, d) => s + d.value, 0), data };
     });
-  }, [responses]);
+  }, [filteredResponses]);
 
   const { satisfactionData, averageScore } = useMemo(() => {
-    if (responses.length === 0) return { satisfactionData: [], averageScore: 0 };
+    if (filteredResponses.length === 0) return { satisfactionData: [], averageScore: 0 };
     const satisfactionCounts: Record<string, number> = {};
     let totalScore = 0;
     let totalCount = 0;
-    responses.forEach((r) => {
+    filteredResponses.forEach((r) => {
       const val = r.answers?.q7 || r.answers?.["10.1"] || "";
       if (typeof val === 'string' && val) satisfactionCounts[val] = (satisfactionCounts[val] || 0) + 1;
       const scoreMap: Record<string, number> = {
@@ -210,7 +324,7 @@ const Dashboard = () => {
     const satisfactionData = Object.entries(satisfactionCounts).map(([name, value]) => ({ name, value }));
     const averageScore = totalCount > 0 ? Math.round(totalScore / totalCount) : 0;
     return { satisfactionData, averageScore };
-  }, [responses]);
+  }, [filteredResponses]);
 
     return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
@@ -237,12 +351,105 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground break-all">
                 {user?.email}
               </p>
-              {companyName && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 justify-center sm:justify-start">
-                  <Building2 className="h-3 w-3" />
-                  {companyName}
-                </div>
-              )}
+              
+              {/* Selettori Azienda e Sede */}
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                {availableCompanies.length > 1 && (
+                  <Popover open={openCompany} onOpenChange={setOpenCompany}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {availableCompanies.find(c => c.id === selectedCompanyId)?.name || 'Seleziona azienda'}
+                          </span>
+                        </div>
+                        <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[240px] p-0 bg-background z-50" align="start">
+                      <Command>
+                        <CommandInput placeholder="Cerca azienda..." />
+                        <CommandList>
+                          <CommandEmpty>Nessuna azienda trovata.</CommandEmpty>
+                          <CommandGroup>
+                            {availableCompanies.map((company) => (
+                              <CommandItem
+                                key={company.id}
+                                value={company.id}
+                                onSelect={() => {
+                                  setSelectedCompanyId(company.id);
+                                  setOpenCompany(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedCompanyId === company.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {company.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
+                
+                {availableSites.length > 1 && (
+                  <Popover open={openSite} onOpenChange={setOpenSite}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {availableSites.find(s => s.id === selectedSiteId)?.name || 'Seleziona sede'}
+                          </span>
+                        </div>
+                        <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[240px] p-0 bg-background z-50" align="start">
+                      <Command>
+                        <CommandInput placeholder="Cerca sede..." />
+                        <CommandList>
+                          <CommandEmpty>Nessuna sede trovata.</CommandEmpty>
+                          <CommandGroup>
+                            {availableSites.map((site) => (
+                              <CommandItem
+                                key={site.id}
+                                value={site.id}
+                                onSelect={() => {
+                                  setSelectedSiteId(site.id);
+                                  setOpenSite(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedSiteId === site.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {site.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
             </div>
           </div>
 
@@ -330,7 +537,7 @@ const Dashboard = () => {
                 <Users className="h-5 w-5 text-primary/50" />
               </div>
               <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                {responses.length}
+                {filteredResponses.length}
               </CardTitle>
               <p className="text-xs text-muted-foreground">Questionari completati</p>
             </CardHeader>
@@ -349,7 +556,7 @@ const Dashboard = () => {
         </div>
 
         {/* Analisi Generali */}
-        {responses.length === 0 ? (
+        {filteredResponses.length === 0 ? (
           <Card className="shadow-lg border-2">
             <CardContent className="py-16 text-center space-y-4">
               <div className="flex justify-center">
