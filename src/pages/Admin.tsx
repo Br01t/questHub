@@ -63,6 +63,11 @@ const Admin = () => {
     >
   >({});
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const filteredUsers = users.filter((u) =>
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
   const [newSiteAddress, setNewSiteAddress] = useState("");
@@ -599,14 +604,27 @@ const Admin = () => {
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="pt-6">
-                {users.length === 0 ? (
+              <CardContent className="pt-6 space-y-6">
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                  <Label htmlFor="search-user" className="text-sm font-medium">
+                    Cerca utente
+                  </Label>
+                  <Input
+                    id="search-user"
+                    type="text"
+                    placeholder="Cerca..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="sm:w-72 w-full"
+                  />
+                </div>
+                {filteredUsers.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    Nessun utente registrato
+                    Nessun utente trovato
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {users.map((userProfile) => {
+                    {filteredUsers.map((userProfile) => {
                       const userState = userAssignments[userProfile.userId] || {
                         companies: userProfile.companyIds || [],
                         sites: userProfile.siteIds || [],
@@ -760,7 +778,6 @@ const Admin = () => {
                             </div>
                           </div>
 
-                          {/* Aziende */}
                           <div className="space-y-2">
                             <Label className="text-xs">Assegna Aziende</Label>
                             <div className="border rounded-lg p-3 bg-muted/10 space-y-1">
@@ -788,7 +805,6 @@ const Admin = () => {
                             </div>
                           </div>
 
-                          {/* Sedi raggruppate per azienda */}
                           {userState.companies.map((companyId) => {
                             const company = companies.find(
                               (c) => c.id === companyId
