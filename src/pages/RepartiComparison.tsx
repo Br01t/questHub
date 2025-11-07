@@ -201,7 +201,7 @@ const RepartiComparison = ({
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
-            {/* <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4">
               {availableCompanies.length > 0 && (
                 <div className="flex flex-col gap-2 min-w-[200px]">
                   <label className="text-sm font-medium">Azienda</label>
@@ -240,7 +240,7 @@ const RepartiComparison = ({
                   </select>
                 </div>
               )}
-            </div> */}
+            </div>
 
             {selectedCompany !== "all" && (
               <div className="text-sm text-muted-foreground">
