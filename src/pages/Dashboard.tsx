@@ -731,7 +731,7 @@ const Dashboard = () => {
               <Card className="shadow-lg border-2">
                 <CardHeader className="border-b bg-gradient-to-r from-accent/5 to-transparent">
                   <CardTitle className="text-xl">
-                    Punteggio Medio Generale
+                    Distibuzione Questionari attivi per Settore
                   </CardTitle>
                   <CardDescription>
                     Valutazione complessiva su scala 0-100
@@ -742,7 +742,7 @@ const Dashboard = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={[
-                          { name: "Media Generale", punteggio: averageScore },
+                          { name: "Sicurezza", punteggio: averageScore },
                         ]}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
