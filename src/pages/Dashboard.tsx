@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface Response {
   id: string;
@@ -78,33 +79,33 @@ const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "meta_reparto", label: "Ufficio / Reparto" },
   { id: "1.1", label: "1.1 Ore di lavoro settimanali a VDT (abituali)" },
   { id: "1.2", label: "1.2 Pause/cambi attività 15' ogni 120' (SI/NO)" },
-  { id: "1.2_note", label: "1.2 - Necessità di intervento (note)" },
+  // { id: "1.2_note", label: "1.2 - Necessità di intervento (note)" },
   { id: "1.3", label: "1.3 Tipo di lavoro prevalente" },
   { id: "1.4", label: "1.4 Informazione al lavoratore per uso VDT (SI/NO)" },
-  { id: "1.4_note", label: "1.4 - Necessità di intervento (note)" },
+  // { id: "1.4_note", label: "1.4 - Necessità di intervento (note)" },
   { id: "2.1", label: "2.1 Modalità ricambio aria (naturale/artificiale)" },
   { id: "2.2", label: "2.2 Possibilità di regolare la temperatura" },
   { id: "2.3", label: "2.3 Possibilità di regolare l'umidità" },
   { id: "2.4", label: "2.4 Eccesso di calore dalle attrezzature (SI/NO)" },
-  { id: "2.4_note", label: "2.4 - Necessità di intervento (note)" },
+  // { id: "2.4_note", label: "2.4 - Necessità di intervento (note)" },
   { id: "3.1", label: "3.1 Tipo di luce (naturale/artificiale/mista)" },
   { id: "3.2_nat", label: "3.2 - Regolazione luce naturale" },
   { id: "3.2_art", label: "3.2 - Regolazione luce artificiale" },
   { id: "3.3", label: "3.3 Posizione rispetto alla sorgente naturale" },
-  { id: "3_note", label: "3 - Necessità di intervento (note)" },
+  // { id: "3_note", label: "3 - Necessità di intervento (note)" },
   { id: "4.1", label: "4.1 Eventuale misura rumore (dB(A))" },
   { id: "4.2", label: "4.2 Disturbo attenzione/comunicazione (SI/NO)" },
-  { id: "4_note", label: "4 - Necessità di intervento (note)" },
+  // { id: "4_note", label: "4 - Necessità di intervento (note)" },
   { id: "5.1", label: "5.1 Spazio di lavoro/manovra adeguato (SI/NO)" },
   { id: "5.2", label: "5.2 Percorsi liberi da ostacoli (SI/NO)" },
-  { id: "5_note", label: "5 - Necessità di intervento (note)" },
+  // { id: "5_note", label: "5 - Necessità di intervento (note)" },
   { id: "6.1", label: "6.1 Superficie del piano adeguata (SI/NO)" },
   { id: "6.2", label: "6.2 Altezza del piano 70-80cm (SI/NO)" },
   {
     id: "6.3",
     label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)",
   },
-  { id: "6_note", label: "6 - Necessità di intervento (note)" },
+  // { id: "6_note", label: "6 - Necessità di intervento (note)" },
   { id: "7.1", label: "7.1 Altezza sedile regolabile" },
   { id: "7.2", label: "7.2 Inclinazione sedile regolabile" },
   { id: "7.3", label: "7.3 Schienale con supporto dorso-lombare" },
@@ -114,19 +115,19 @@ const FULL_QUESTIONS: { id: string; label: string }[] = [
     label: "7.5 Schienale/seduta bordi smussati/materiali appropriati",
   },
   { id: "7.6", label: "7.6 Presenza di ruote/meccanismo spostamento" },
-  { id: "7_note", label: "7 - Necessità di intervento (note)" },
+  // { id: "7_note", label: "7 - Necessità di intervento (note)" },
   { id: "8.1", label: "8.1 Monitor orientabile/inclinabile" },
   { id: "8.2", label: "8.2 Immagine stabile, senza sfarfallio" },
   { id: "8.3", label: "8.3 Risoluzione/luminosità regolabili" },
   { id: "8.4", label: "8.4 Contrasto/luminosità adeguati" },
   { id: "8.5", label: "8.5 Presenza di riflessi o riverberi" },
-  { id: "8.6", label: "8.6 Note su posizione dello schermo" },
-  { id: "8_note", label: "8 - Necessità di intervento (note)" },
+  // { id: "8.6", label: "8.6 Note su posizione dello schermo" },
+  // { id: "8_note", label: "8 - Necessità di intervento (note)" },
   { id: "9.1", label: "9.1 Tastiera e mouse separati dallo schermo" },
   { id: "9.2", label: "9.2 Tastiera inclinabile" },
   { id: "9.3", label: "9.3 Spazio per appoggiare avambracci" },
   { id: "9.4", label: "9.4 Simboli/tasti leggibili" },
-  { id: "9_note", label: "9 - Necessità di intervento (note)" },
+  // { id: "9_note", label: "9 - Necessità di intervento (note)" },
   { id: "10_note", label: "10 - Osservazioni (note)" },
 ];
 
@@ -211,20 +212,17 @@ const Dashboard = () => {
       })) as Company[];
 
       if (!isSuperAdmin) {
-        // supporta userProfile.companyIds (array)
         const allowedCompanyIds: string[] = userProfile?.companyIds || [];
 
         if (allowedCompanyIds.length > 0) {
           companies = companies.filter((c) => allowedCompanyIds.includes(c.id));
         } else {
-          // nessuna azienda assegnata: mostra vuoto
           companies = [];
         }
       }
 
       setAvailableCompanies(companies);
 
-      // Imposta azienda di default: se l'utente ha aziende assegnate scegli la prima
       if (companies.length > 0) {
         const defaultCompany = companies[0].id;
         setSelectedCompanyId(defaultCompany);
@@ -302,7 +300,6 @@ const Dashboard = () => {
     navigate("/login");
   };
 
-  // Filtra le risposte in base alla selezione di azienda e sede
   const filteredResponses = useMemo(() => {
     let filtered = responses;
 
@@ -579,7 +576,6 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Nuovo Questionario */}
           <Card
@@ -769,41 +765,45 @@ const Dashboard = () => {
               <div className="h-1 flex-1 bg-gradient-to-l from-primary to-primary-glow rounded-full" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Accordion type="single" collapsible className="w-full space-y-3">
               {groupedByQuestion
                 .filter((q) => q.total > 0)
                 .map((q) => (
-                  <Card
+                  <AccordionItem
                     key={q.id}
-                    className="shadow-md border hover:shadow-lg transition-shadow"
+                    value={q.id}
+                    className="border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow"
                   >
-                    <CardHeader className="pb-3 space-y-1">
-                      <CardTitle className="text-base leading-tight">
-                        {q.label}
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        {q.total} risposte totali
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                    <AccordionTrigger className="px-4 py-3 flex items-center justify-between text-left">
+                      <div>
+                        <h3 className="text-sm font-medium">{q.label}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {q.total} risposte totali
+                        </p>
+                      </div>
+                    </AccordionTrigger>
+
+                    <AccordionContent className="px-4 pb-4 pt-2">
                       {q.data.length === 0 ? (
                         <div className="text-sm text-muted-foreground">
                           Nessuna risposta
                         </div>
                       ) : (
-                        <div style={{ height: 220 }}>
+                        <div style={{ height: 260 }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                              layout="vertical"
+                              layout="horizontal"
                               data={q.data.sort((a, b) => b.value - a.value)}
                             >
                               <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis type="number" allowDecimals={false} />
-                              <YAxis
-                                type="category"
+                              <XAxis
                                 dataKey="name"
-                                width={160}
+                                interval={0}
+                                angle={0}
+                                textAnchor="middle"
+                                tick={{ fontSize: 12, width: 100 }}
                               />
+                              <YAxis allowDecimals={false} />
                               <Tooltip />
                               <Bar dataKey="value">
                                 {q.data.map((_, i) => (
@@ -817,10 +817,10 @@ const Dashboard = () => {
                           </ResponsiveContainer>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))}
-            </div>
+            </Accordion>
           </div>
         )}
       </main>
