@@ -1,7 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 
 interface Response {
   id: string;
@@ -10,6 +15,7 @@ interface Response {
   };
   companyId?: string;
   siteId?: string;
+  sector: string;
 }
 import {
   Card,
@@ -392,6 +398,19 @@ const Dashboard = () => {
     return { satisfactionData, averageScore };
   }, [filteredResponses]);
 
+  const responsesBySector = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredResponses.forEach((r) => {
+      const sector = r.sector || "Non definito";
+      counts[sector] = (counts[sector] || 0) + 1;
+    });
+
+    return Object.entries(counts).map(([name, count]) => ({
+      name,
+      count,
+    }));
+  }, [filteredResponses]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
       <header className="border-b bg-card/80 backdrop-blur-md shadow-md sticky top-0 z-50">
@@ -694,7 +713,7 @@ const Dashboard = () => {
         ) : (
           <div className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {satisfactionData.length > 0 && (
+              {/* {satisfactionData.length > 0 && (
                 <Card className="shadow-lg border-2">
                   <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
                     <CardTitle className="text-xl">
@@ -726,7 +745,7 @@ const Dashboard = () => {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-              )}
+              )} */}
 
               <Card className="shadow-lg border-2">
                 <CardHeader className="border-b bg-gradient-to-r from-accent/5 to-transparent">
@@ -740,19 +759,22 @@ const Dashboard = () => {
                 <CardContent>
                   <div style={{ height: 260 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={[
-                          { name: "Sicurezza", punteggio: averageScore },
-                        ]}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip />
-                        <Bar dataKey="punteggio" fill={COLORS[0]}>
-                          <Cell key="cell" fill={COLORS[0]} />
-                        </Bar>
-                      </BarChart>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={responsesBySector}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="count" fill={COLORS[0]}>
+                            {responsesBySector.map((_, i) => (
+                              <Cell
+                                key={`cell-${i}`}
+                                fill={COLORS[i % COLORS.length]}
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>

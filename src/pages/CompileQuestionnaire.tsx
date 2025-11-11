@@ -383,6 +383,14 @@ const questions: Question[] = [
   },
 ] as const;
 
+const SECTORS = [
+  "Sicurezza",
+  "Ambiente",
+  "Formazione",
+  "Medicina del Lavoro",
+  "Altro",
+];
+
 const CompileQuestionnaire: React.FC = () => {
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
@@ -393,8 +401,8 @@ const CompileQuestionnaire: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [companyName, setCompanyName] = useState<string>("");
   const [siteName, setSiteName] = useState<string>("");
+  const [selectedSector, setSelectedSector] = useState<string>(SECTORS[0]);
 
-  // Dialog per selezione azienda/sede
   const [showSelectDialog, setShowSelectDialog] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [sites, setSites] = useState<CompanySite[]>([]);
@@ -402,37 +410,49 @@ const CompileQuestionnaire: React.FC = () => {
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [loadingData, setLoadingData] = useState(false);
 
-useEffect(() => {
-  console.log("🔄 [CompileQuestionnaire] useEffect attivato con userProfile:", userProfile);
+  useEffect(() => {
+    console.log(
+      "🔄 [CompileQuestionnaire] useEffect attivato con userProfile:",
+      userProfile
+    );
 
-  const savedData = localStorage.getItem("selectedCompanyData");
+    const savedData = localStorage.getItem("selectedCompanyData");
 
-  if (savedData) {
-    console.log("💾 [CompileQuestionnaire] Dati trovati in localStorage:", savedData);
+    if (savedData) {
+      console.log(
+        "💾 [CompileQuestionnaire] Dati trovati in localStorage:",
+        savedData
+      );
 
-    try {
-      const parsed = JSON.parse(savedData);
-      const { companyId, companyName, siteId, siteName } = parsed;
-      setSelectedCompanyId(companyId);
-      setSelectedSiteId(siteId);
-      setCompanyName(companyName?.name || companyName || "N/D");
-      setSiteName(siteName?.name || siteName || "N/D");
-      setShowSelectDialog(false);
-    } catch (err) {
-      console.error("❌ [CompileQuestionnaire] Errore nel parsing di selectedCompanyData:", err);
+      try {
+        const parsed = JSON.parse(savedData);
+        const { companyId, companyName, siteId, siteName } = parsed;
+        setSelectedCompanyId(companyId);
+        setSelectedSiteId(siteId);
+        setCompanyName(companyName?.name || companyName || "N/D");
+        setSiteName(siteName?.name || siteName || "N/D");
+        setShowSelectDialog(false);
+      } catch (err) {
+        console.error(
+          "❌ [CompileQuestionnaire] Errore nel parsing di selectedCompanyData:",
+          err
+        );
+        checkAndLoadCompanyData();
+      }
+    } else {
+      console.warn(
+        "⚠️ [CompileQuestionnaire] Nessun dato in localStorage, uso fallback."
+      );
       checkAndLoadCompanyData();
     }
-  } else {
-    console.warn("⚠️ [CompileQuestionnaire] Nessun dato in localStorage, uso fallback.");
-    checkAndLoadCompanyData();
-  }
-}, [userProfile]);
-
-
+  }, [userProfile]);
 
   const checkAndLoadCompanyData = async () => {
-    if (userProfile?.companyIds && userProfile.companyIds.length === 1 && userProfile?.siteIds?.length === 1) {
-      // Assegnazione unica → imposta direttamente
+    if (
+      userProfile?.companyIds &&
+      userProfile.companyIds.length === 1 &&
+      userProfile?.siteIds?.length === 1
+    ) {
       const companyId = userProfile.companyIds[0];
       const siteId = userProfile.siteIds[0];
       setSelectedCompanyId(companyId);
@@ -458,7 +478,9 @@ useEffect(() => {
           id: d.id,
           ...d.data(),
         })) as Company[];
-        companiesData = allCompanies.filter((c) => userProfile.companyIds!.includes(c.id));
+        companiesData = allCompanies.filter((c) =>
+          userProfile.companyIds!.includes(c.id)
+        );
       }
 
       if (userProfile.siteIds && userProfile.siteIds.length > 0) {
@@ -475,7 +497,9 @@ useEffect(() => {
           id: d.id,
           ...d.data(),
         })) as CompanySite[];
-        sitesData = allSites.filter((s) => userProfile.companyIds!.includes(s.companyId));
+        sitesData = allSites.filter((s) =>
+          userProfile.companyIds!.includes(s.companyId)
+        );
         sitesData = sitesSnap.docs.map((d) => ({
           id: d.id,
           ...d.data(),
@@ -555,6 +579,16 @@ useEffect(() => {
         return false;
       }
     }
+
+    if (!selectedSector) {
+      toast({
+        variant: "destructive",
+        title: "Attenzione",
+        description: "Seleziona un settore prima di inviare il questionario",
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -568,7 +602,6 @@ useEffect(() => {
   const handleSubmitConfirmed = async () => {
     setSubmitting(true);
     try {
-      // Serializza le risposte in modo sicuro
       const completeAnswers: Record<
         string,
         string | string[] | boolean | null
@@ -578,7 +611,6 @@ useEffect(() => {
         const val = answers[q.id];
 
         if (val instanceof File) {
-          // Se per errore c'è ancora un File, lo ignoriamo
           console.warn(`Ignoro File non convertito per la domanda ${q.id}`);
           completeAnswers[q.id] = null;
         } else if (
@@ -586,7 +618,6 @@ useEffect(() => {
           val !== null &&
           "base64" in (val as any)
         ) {
-          // nel caso sia un oggetto con proprietà base64
           completeAnswers[q.id] = (val as any).base64;
         } else if (Array.isArray(val)) {
           completeAnswers[q.id] = val.map((v) => String(v));
@@ -597,12 +628,10 @@ useEffect(() => {
         }
       }
 
-      // Verifica se l'immagine è troppo grande e riducila
       const foto = completeAnswers["foto_postazione"];
       if (typeof foto === "string" && foto.startsWith("data:image/")) {
         if (foto.length > 900_000) {
           console.warn("Ridimensiono immagine base64 troppo grande");
-          // Piccolo compressore inline per evitare crash
           const img = new Image();
           img.src = foto;
           await new Promise((res) => (img.onload = res));
@@ -629,12 +658,13 @@ useEffect(() => {
         }
       }
 
-      // ✅ Invio su Firestore
+      // Invio su Firestore
       await addDoc(collection(db, "responses"), {
         userId: user?.uid ?? null,
         userEmail: user?.email ?? null,
         companyId: selectedCompanyId,
         siteId: selectedSiteId,
+        sector: selectedSector,
         formId: "checklist_vdt_v1",
         answers: completeAnswers,
         createdAt: serverTimestamp(),
@@ -665,7 +695,6 @@ useEffect(() => {
     sections[q.section].push(q);
   });
 
-  // ✅ Aggiornata: ignora text/textarea tranne meta_nome e foto_postazione
   const isSectionComplete = (sectionKey: string) => {
     return sections[sectionKey].every((q) => {
       const isTextField = q.type === "text" || q.type === "textarea";
@@ -731,6 +760,24 @@ useEffect(() => {
               </div>
             </AlertDescription>
           </Alert>
+        )}
+
+        {selectedCompanyId && selectedSiteId && (
+          <div className="my-4">
+            <Label htmlFor="sector">Settore</Label>
+            <Select value={selectedSector} onValueChange={setSelectedSector}>
+              <SelectTrigger id="sector">
+                <SelectValue placeholder="Seleziona settore..." />
+              </SelectTrigger>
+              <SelectContent>
+                {SECTORS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
 
         <Card className="shadow-xl border-2">
