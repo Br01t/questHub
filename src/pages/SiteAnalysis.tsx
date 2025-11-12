@@ -79,13 +79,19 @@ const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "5_note", label: "5 - Necessità di intervento (note)" },
   { id: "6.1", label: "6.1 Superficie del piano adeguata (SI/NO)" },
   { id: "6.2", label: "6.2 Altezza del piano 70-80cm (SI/NO)" },
-  { id: "6.3", label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)" },
+  {
+    id: "6.3",
+    label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)",
+  },
   { id: "6_note", label: "6 - Necessità di intervento (note)" },
   { id: "7.1", label: "7.1 Altezza sedile regolabile" },
   { id: "7.2", label: "7.2 Inclinazione sedile regolabile" },
   { id: "7.3", label: "7.3 Schienale con supporto dorso-lombare" },
   { id: "7.4", label: "7.4 Schienale regolabile in altezza" },
-  { id: "7.5", label: "7.5 Schienale/seduta bordi smussati/materiali appropriati" },
+  {
+    id: "7.5",
+    label: "7.5 Schienale/seduta bordi smussati/materiali appropriati",
+  },
   { id: "7.6", label: "7.6 Presenza di ruote/meccanismo spostamento" },
   { id: "7_note", label: "7 - Necessità di intervento (note)" },
   { id: "8.1", label: "8.1 Monitor orientabile/inclinabile" },
@@ -159,16 +165,16 @@ export default function SiteAnalysis({
     try {
       // Carica aziende
       const companiesSnap = await getDocs(query(collection(db, "companies")));
-      let companiesData = companiesSnap.docs.map((d) => ({ 
-        id: d.id, 
-        ...d.data() 
+      let companiesData = companiesSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
       })) as Company[];
 
       // Carica sedi
       const sitesSnap = await getDocs(query(collection(db, "companySites")));
-      let sitesData = sitesSnap.docs.map((d) => ({ 
-        id: d.id, 
-        ...d.data() 
+      let sitesData = sitesSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
       })) as CompanySite[];
 
       // Filtra in base ai permessi utente
@@ -178,16 +184,14 @@ export default function SiteAnalysis({
 
         // Filtra aziende assegnate
         if (userCompanyIds.length > 0) {
-          companiesData = companiesData.filter(company => 
+          companiesData = companiesData.filter((company) =>
             userCompanyIds.includes(company.id)
           );
         }
 
         // Filtra sedi assegnate
         if (userSiteIds.length > 0) {
-          sitesData = sitesData.filter(site => 
-            userSiteIds.includes(site.id)
-          );
+          sitesData = sitesData.filter((site) => userSiteIds.includes(site.id));
         }
       }
 
@@ -203,7 +207,7 @@ export default function SiteAnalysis({
   // Sedi filtrate per azienda selezionata
   const filteredSites = useMemo(() => {
     if (selectedCompany === "all") return allSites;
-    return allSites.filter(site => site.companyId === selectedCompany);
+    return allSites.filter((site) => site.companyId === selectedCompany);
   }, [allSites, selectedCompany]);
 
   // Reset sede quando cambia l'azienda
@@ -243,8 +247,13 @@ export default function SiteAnalysis({
   const generatePDF = () => {
     if (selectedSite === "all" || responsesBySite.length === 0) return;
 
-    const siteName = allSites.find((s) => s.id === selectedSite)?.name || selectedSite;
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const siteName =
+      allSites.find((s) => s.id === selectedSite)?.name || selectedSite;
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
     const marginLeft = 14;
 
     doc.setFontSize(16);
@@ -256,8 +265,9 @@ export default function SiteAnalysis({
     let currentSection = "";
 
     FULL_QUESTIONS.forEach((q) => {
-      const sectionTitle =
-        Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
+      const sectionTitle = Object.entries(SECTION_TITLES).find(
+        ([id]) => q.id === id
+      )?.[1];
       if (sectionTitle && sectionTitle !== currentSection) {
         currentSection = sectionTitle;
         body.push([sectionTitle, ...Array(workers.length).fill("")]);
@@ -345,7 +355,9 @@ export default function SiteAnalysis({
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedCompany === "all" ? "opacity-100" : "opacity-0"
+                          selectedCompany === "all"
+                            ? "opacity-100"
+                            : "opacity-0"
                         )}
                       />
                       Tutte
@@ -362,7 +374,9 @@ export default function SiteAnalysis({
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            selectedCompany === c.id ? "opacity-100" : "opacity-0"
+                            selectedCompany === c.id
+                              ? "opacity-100"
+                              : "opacity-0"
                           )}
                         />
                         {c.name}
@@ -390,8 +404,12 @@ export default function SiteAnalysis({
                   ? "Tutte le sedi"
                   : (() => {
                       const site = allSites.find((s) => s.id === selectedSite);
-                      const company = companies.find((c) => c.id === site?.companyId);
-                      return site && company ? `${site.name} - ${company.name}` : selectedSite;
+                      const company = companies.find(
+                        (c) => c.id === site?.companyId
+                      );
+                      return site && company
+                        ? `${site.name} - ${company.name}`
+                        : selectedSite;
                     })()}
                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -418,7 +436,9 @@ export default function SiteAnalysis({
                       Tutte
                     </CommandItem>
                     {filteredSites.map((s) => {
-                      const company = companies.find((c) => c.id === s.companyId);
+                      const company = companies.find(
+                        (c) => c.id === s.companyId
+                      );
                       return (
                         <CommandItem
                           key={s.id}
@@ -431,7 +451,9 @@ export default function SiteAnalysis({
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              selectedSite === s.id ? "opacity-100" : "opacity-0"
+                              selectedSite === s.id
+                                ? "opacity-100"
+                                : "opacity-0"
                             )}
                           />
                           {company ? `${s.name} - ${company.name}` : s.name}
@@ -456,7 +478,8 @@ export default function SiteAnalysis({
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
             <CardTitle>
-              {allSites.find((s) => s.id === selectedSite)?.name || selectedSite}
+              {allSites.find((s) => s.id === selectedSite)?.name ||
+                selectedSite}
             </CardTitle>
             <CardDescription>
               Confronto risposte dei lavoratori nella sede
@@ -484,9 +507,9 @@ export default function SiteAnalysis({
                   let currentSection = "";
                   const rows: JSX.Element[] = [];
                   FULL_QUESTIONS.forEach((q) => {
-                    const sectionTitle =
-                      Object.entries(SECTION_TITLES).find(([id]) => q.id === id)
-                        ?.[1];
+                    const sectionTitle = Object.entries(SECTION_TITLES).find(
+                      ([id]) => q.id === id
+                    )?.[1];
                     if (sectionTitle && sectionTitle !== currentSection) {
                       currentSection = sectionTitle;
                       rows.push(
@@ -504,9 +527,26 @@ export default function SiteAnalysis({
                       );
                     }
 
-                    const answers = responsesBySite.map((r) =>
-                      renderAnswer(r.answers?.[q.id])
-                    );
+                    const answers = responsesBySite.map((r) => {
+                      const val = r.answers?.[q.id];
+
+                      // Mostra l'immagine se è la colonna 'foto_postazione'
+                      if (
+                        q.id === "foto_postazione" &&
+                        typeof val === "string" &&
+                        val.startsWith("data:image")
+                      ) {
+                        return (
+                          <img
+                            src={val}
+                            alt={`Foto ${r.answers?.meta_nome || ""}`}
+                            className="mx-auto h-16 w-16 object-cover rounded"
+                          />
+                        );
+                      }
+
+                      return renderAnswer(val);
+                    });
 
                     if (answers.every((a) => a === "—")) return;
 

@@ -36,73 +36,215 @@ type ResponseDoc = {
   userId?: string | null;
 };
 
-const FULL_QUESTIONS: { id: string; label: string }[] = [
-  { id: "meta_nome", label: "Nome valutato / lavoratore" },
-  { id: "meta_postazione", label: "Postazione n." },
-  { id: "meta_reparto", label: "Ufficio / Reparto" },
-  { id: "1.1", label: "1.1 Ore di lavoro settimanali a VDT (abituali)" },
-  { id: "1.2", label: "1.2 Pause/cambi attività 15' ogni 120' (SI/NO)" },
-  { id: "1.2_note", label: "1.2 - Necessità di intervento (note)" },
-  { id: "1.3", label: "1.3 Tipo di lavoro prevalente" },
-  { id: "1.4", label: "1.4 Informazione al lavoratore per uso VDT (SI/NO)" },
-  { id: "1.4_note", label: "1.4 - Necessità di intervento (note)" },
-  { id: "2.1", label: "2.1 Modalità ricambio aria (naturale/artificiale)" },
-  { id: "2.2", label: "2.2 Possibilità di regolare la temperatura" },
-  { id: "2.3", label: "2.3 Possibilità di regolare l'umidità" },
-  { id: "2.4", label: "2.4 Eccesso di calore dalle attrezzature (SI/NO)" },
-  { id: "2.4_note", label: "2.4 - Necessità di intervento (note)" },
-  { id: "3.1", label: "3.1 Tipo di luce (naturale/artificiale/mista)" },
-  { id: "3.2_nat", label: "3.2 - Regolazione luce naturale" },
-  { id: "3.2_art", label: "3.2 - Regolazione luce artificiale" },
-  { id: "3.3", label: "3.3 Posizione rispetto alla sorgente naturale" },
-  { id: "3_note", label: "3 - Necessità di intervento (note)" },
-  { id: "4.1", label: "4.1 Eventuale misura rumore (dB(A))" },
-  { id: "4.2", label: "4.2 Disturbo attenzione/comunicazione (SI/NO)" },
-  { id: "4_note", label: "4 - Necessità di intervento (note)" },
-  { id: "5.1", label: "5.1 Spazio di lavoro/manovra adeguato (SI/NO)" },
-  { id: "5.2", label: "5.2 Percorsi liberi da ostacoli (SI/NO)" },
-  { id: "5_note", label: "5 - Necessità di intervento (note)" },
-  { id: "6.1", label: "6.1 Superficie del piano adeguata (SI/NO)" },
-  { id: "6.2", label: "6.2 Altezza del piano 70-80cm (SI/NO)" },
-  { id: "6.3", label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)" },
-  { id: "6_note", label: "6 - Necessità di intervento (note)" },
-  { id: "7.1", label: "7.1 Altezza sedile regolabile" },
-  { id: "7.2", label: "7.2 Inclinazione sedile regolabile" },
-  { id: "7.3", label: "7.3 Schienale con supporto dorso-lombare" },
-  { id: "7.4", label: "7.4 Schienale regolabile in altezza" },
-  { id: "7.5", label: "7.5 Schienale/seduta bordi smussati/materiali appropriati" },
-  { id: "7.6", label: "7.6 Presenza di ruote/meccanismo spostamento" },
-  { id: "7_note", label: "7 - Necessità di intervento (note)" },
-  { id: "8.1", label: "8.1 Monitor orientabile/inclinabile" },
-  { id: "8.2", label: "8.2 Immagine stabile, senza sfarfallio" },
-  { id: "8.3", label: "8.3 Risoluzione/luminosità regolabili" },
-  { id: "8.4", label: "8.4 Contrasto/luminosità adeguati" },
-  { id: "8.5", label: "8.5 Presenza di riflessi o riverberi" },
-  { id: "8.6", label: "8.6 Note su posizione dello schermo" },
-  { id: "8_note", label: "8 - Necessità di intervento (note)" },
-  { id: "9.1", label: "9.1 Tastiera e mouse separati dallo schermo" },
-  { id: "9.2", label: "9.2 Tastiera inclinabile" },
-  { id: "9.3", label: "9.3 Spazio per appoggiare avambracci" },
-  { id: "9.4", label: "9.4 Simboli/tasti leggibili" },
-  { id: "9_note", label: "9 - Necessità di intervento (note)" },
-  { id: "10.1", label: "10.1 Software adeguato e di facile utilizzo (SI/NO)" },
-  { id: "10_note", label: "10 - Osservazioni (note)" },
-  { id: "foto_postazione", label: "Foto della postazione (URL/nota)" },
+// ✅ Domande ufficiali (aggiornate da checklist)
+const FULL_QUESTIONS: { id: string; label: string; section: string }[] = [
+  {
+    id: "meta_nome",
+    label: "Nome del valutato (lavoratore o reparto)",
+    section: "Intestazione",
+  },
+  { id: "meta_postazione", label: "Postazione n.", section: "Intestazione" },
+  { id: "meta_reparto", label: "Ufficio / Reparto", section: "Intestazione" },
+
+  {
+    id: "1.1",
+    label: "1.1 Ore di lavoro settimanali a VDT (abituali)",
+    section: "1) ORGANIZZAZIONE DEL LAVORO",
+  },
+  {
+    id: "1.2",
+    label: "1.2 Pause/cambi attività 15' ogni 120' (SI/NO)",
+    section: "1) ORGANIZZAZIONE DEL LAVORO",
+  },
+  {
+    id: "1.3",
+    label: "1.3 Tipo di lavoro prevalente",
+    section: "1) ORGANIZZAZIONE DEL LAVORO",
+  },
+  {
+    id: "1.4",
+    label: "1.4 Informazione al lavoratore per uso VDT (SI/NO)",
+    section: "1) ORGANIZZAZIONE DEL LAVORO",
+  },
+
+  {
+    id: "2.1",
+    label: "2.1 Modalità ricambio aria (naturale/artificiale)",
+    section: "2) MICROCLIMA",
+  },
+  {
+    id: "2.2",
+    label: "2.2 Possibilità di regolare la temperatura",
+    section: "2) MICROCLIMA",
+  },
+  {
+    id: "2.3",
+    label: "2.3 Possibilità di regolare l'umidità",
+    section: "2) MICROCLIMA",
+  },
+  {
+    id: "2.4",
+    label: "2.4 Eccesso di calore dalle attrezzature (SI/NO)",
+    section: "2) MICROCLIMA",
+  },
+
+  {
+    id: "3.1",
+    label: "3.1 Tipo di luce (naturale/artificiale/mista)",
+    section: "3) ILLUMINAZIONE",
+  },
+  {
+    id: "3.2_nat",
+    label: "3.2 - Regolazione luce naturale",
+    section: "3) ILLUMINAZIONE",
+  },
+  {
+    id: "3.2_art",
+    label: "3.2 - Regolazione luce artificiale",
+    section: "3) ILLUMINAZIONE",
+  },
+  {
+    id: "3.3",
+    label: "3.3 Posizione rispetto alla sorgente naturale",
+    section: "3) ILLUMINAZIONE",
+  },
+
+  {
+    id: "4.1",
+    label: "4.1 Eventuale misura rumore (dB(A))",
+    section: "4) RUMORE AMBIENTALE",
+  },
+  {
+    id: "4.2",
+    label: "4.2 Disturbo attenzione/comunicazione (SI/NO)",
+    section: "4) RUMORE AMBIENTALE",
+  },
+
+  {
+    id: "5.1",
+    label: "5.1 Spazio di lavoro/manovra adeguato (SI/NO)",
+    section: "5) SPAZIO",
+  },
+  {
+    id: "5.2",
+    label: "5.2 Percorsi liberi da ostacoli (SI/NO)",
+    section: "5) SPAZIO",
+  },
+
+  {
+    id: "6.1",
+    label: "6.1 Superficie del piano adeguata (SI/NO)",
+    section: "6) PIANO DI LAVORO",
+  },
+  {
+    id: "6.2",
+    label: "6.2 Altezza del piano 70-80cm (SI/NO)",
+    section: "6) PIANO DI LAVORO",
+  },
+  {
+    id: "6.3",
+    label: "6.3 Disposizione schermo/tastiera/mouse adeguata (SI/NO)",
+    section: "6) PIANO DI LAVORO",
+  },
+
+  {
+    id: "7.1",
+    label: "7.1 Altezza sedile regolabile",
+    section: "7) SEDILE DI LAVORO",
+  },
+  {
+    id: "7.2",
+    label: "7.2 Inclinazione sedile regolabile",
+    section: "7) SEDILE DI LAVORO",
+  },
+  {
+    id: "7.3",
+    label: "7.3 Schienale con supporto dorso-lombare",
+    section: "7) SEDILE DI LAVORO",
+  },
+  {
+    id: "7.4",
+    label: "7.4 Schienale regolabile in altezza",
+    section: "7) SEDILE DI LAVORO",
+  },
+  {
+    id: "7.5",
+    label: "7.5 Schienale/seduta bordi smussati/materiali appropriati",
+    section: "7) SEDILE DI LAVORO",
+  },
+  {
+    id: "7.6",
+    label: "7.6 Presenza di ruote/meccanismo spostamento",
+    section: "7) SEDILE DI LAVORO",
+  },
+
+  {
+    id: "8.1",
+    label: "8.1 Monitor orientabile/inclinabile",
+    section: "8) SCHERMO VIDEO",
+  },
+  {
+    id: "8.2",
+    label: "8.2 Immagine stabile, senza sfarfallio",
+    section: "8) SCHERMO VIDEO",
+  },
+  {
+    id: "8.3",
+    label: "8.3 Risoluzione/luminosità regolabili",
+    section: "8) SCHERMO VIDEO",
+  },
+  {
+    id: "8.4",
+    label: "8.4 Contrasto/luminosità adeguati",
+    section: "8) SCHERMO VIDEO",
+  },
+  {
+    id: "8.5",
+    label: "8.5 Presenza di riflessi o riverberi",
+    section: "8) SCHERMO VIDEO",
+  },
+  {
+    id: "8.6",
+    label: "8.6 Note su posizione dello schermo",
+    section: "8) SCHERMO VIDEO",
+  },
+
+  {
+    id: "9.1",
+    label: "9.1 Tastiera e mouse separati dallo schermo",
+    section: "9) TASTIERA",
+  },
+  { id: "9.2", label: "9.2 Tastiera inclinabile", section: "9) TASTIERA" },
+  {
+    id: "9.3",
+    label: "9.3 Spazio per appoggiare avambracci",
+    section: "9) TASTIERA",
+  },
+  { id: "9.4", label: "9.4 Simboli/tasti leggibili", section: "9) TASTIERA" },
+
+  {
+    id: "10.1",
+    label: "10.1 Software adeguato e di facile utilizzo (SI/NO)",
+    section: "10) INTERFACCIA UOMO-MACCHINA",
+  },
+  {
+    id: "10_2",
+    label: "10.2 Osservazioni (eventuali)",
+    section: "10) INTERFACCIA UOMO-MACCHINA",
+  },
+
+  {
+    id: "foto_postazione",
+    label: "Foto della postazione (URL/nota)",
+    section: "Fine",
+  },
 ];
 
-const SECTION_TITLES: Record<string, string> = {
-  meta_nome: "INTESTAZIONE",
-  "1.1": "1) ORGANIZZAZIONE DEL LAVORO",
-  "2.1": "2) MICROCLIMA",
-  "3.1": "3) ILLUMINAZIONE",
-  "4.1": "4) RUMORE",
-  "5.1": "5) AMBIENTE DI LAVORO",
-  "6.1": "6) PIANO DI LAVORO",
-  "7.1": "7) SEDILE DI LAVORO",
-  "8.1": "8) SCHERMO",
-  "9.1": "9) TASTIERA E DISPOSITIVI DI INPUT",
-  "10.1": "10) SOFTWARE",
-};
+// ✅ Mappa per il titolo sezione (per PDF o tabella)
+const SECTION_TITLES: Record<string, string> = {};
+FULL_QUESTIONS.forEach((q) => {
+  if (!SECTION_TITLES[q.id]) SECTION_TITLES[q.id] = q.section;
+});
 
 interface RepartoAnalysisProps {
   filteredResponses: ResponseDoc[];
@@ -130,28 +272,52 @@ export default function RepartoAnalysis({
   const [selectedReparto, setSelectedReparto] = useState<string>("all");
   const [openReparto, setOpenReparto] = useState(false);
 
-  const reparti = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          filteredResponses.map((r) => r.answers?.meta_reparto).filter(Boolean)
-        )
-      ).sort(),
-    [filteredResponses]
-  );
+  const reparti = useMemo(() => {
+    const repartiEstratti = filteredResponses
+      .map((r) => r.answers?.meta_reparto)
+      .filter(Boolean);
+
+    console.log("🧭 meta_reparto trovati nei dati:", repartiEstratti);
+
+    const repartiUnici = Array.from(new Set(repartiEstratti)).sort();
+
+    console.log("✅ Reparti unici per la tendina:", repartiUnici);
+
+    return repartiUnici;
+  }, [filteredResponses]);
 
   const responsesByReparto = useMemo(() => {
     if (selectedReparto === "all") return [];
-    return filteredResponses.filter(
-      (r) => r.answers?.meta_reparto === selectedReparto
-    );
-  }, [filteredResponses, selectedReparto]);
 
-  const dates = responsesByReparto.map((r) =>
-    r.createdAt?.toDate()
-      ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm")
-      : "N/D"
-  );
+    const selezione = String(selectedReparto || "")
+      .trim()
+      .toLowerCase();
+
+    const filtered = filteredResponses.filter((r) => {
+      const reparto = String(r.answers?.meta_reparto || "")
+        .trim()
+        .toLowerCase();
+      return reparto === selezione;
+    });
+
+    console.log("🎯 selectedReparto (raw):", selectedReparto);
+    console.log("🔎 selectedReparto (normalized):", selezione);
+    console.log("📦 filteredResponses length:", filteredResponses.length);
+    // mostra qualche esempio (max 5) per capire cosa contiene
+    console.log(
+      "📂 filtered (sample up to 5):",
+      filtered.slice(0, 5).map((r) => ({
+        id: r.id,
+        meta_reparto: r.answers?.meta_reparto,
+        meta_nome: r.answers?.meta_nome,
+        answers: r.answers,
+        createdAt: r.createdAt?.toDate?.() ?? r.createdAt,
+      }))
+    );
+    console.log("📊 filtered length:", filtered.length);
+
+    return filtered;
+  }, [filteredResponses, selectedReparto]);
 
   const workers = useMemo(
     () =>
@@ -166,16 +332,25 @@ export default function RepartoAnalysis({
   );
 
   const renderAnswer = (val: AnswerValue) => {
-    if (val === undefined || val === null || val === "") return "—";
-    if (Array.isArray(val)) return val.join(", ");
-    return String(val);
+    if (val === undefined || val === null) return "—";
+    if (Array.isArray(val)) {
+      if (val.length === 0) return "—";
+      return val.join(", ");
+    }
+    const str = String(val).trim();
+    if (!str || str === "undefined" || str === "null") return "—";
+    return str;
   };
 
   // 🔹 PDF generation aligned with WorkerAnalysis style
   const generatePDF = () => {
     if (selectedReparto === "all" || responsesByReparto.length === 0) return;
 
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
     const marginLeft = 14;
 
     doc.setFontSize(16);
@@ -187,8 +362,9 @@ export default function RepartoAnalysis({
     let currentSection = "";
 
     FULL_QUESTIONS.forEach((q) => {
-      const sectionTitle =
-        Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
+      const sectionTitle = Object.entries(SECTION_TITLES).find(
+        ([id]) => q.id === id
+      )?.[1];
       if (sectionTitle && sectionTitle !== currentSection) {
         currentSection = sectionTitle;
         body.push([sectionTitle, ...Array(workers.length).fill("")]);
@@ -197,6 +373,7 @@ export default function RepartoAnalysis({
       const answers = responsesByReparto.map((r) =>
         renderAnswer(r.answers?.[q.id])
       );
+      console.log("🔍 Domanda:", q.id, "=>", answers);
       if (answers.every((a) => a === "—")) return;
       body.push([q.label, ...answers]);
     });
@@ -315,7 +492,9 @@ export default function RepartoAnalysis({
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedReparto === "all" ? "opacity-100" : "opacity-0"
+                          selectedReparto === "all"
+                            ? "opacity-100"
+                            : "opacity-0"
                         )}
                       />
                       Tutti
@@ -385,9 +564,9 @@ export default function RepartoAnalysis({
                   let currentSection = "";
                   const rows: JSX.Element[] = [];
                   FULL_QUESTIONS.forEach((q) => {
-                    const sectionTitle =
-                      Object.entries(SECTION_TITLES).find(([id]) => q.id === id)
-                        ?.[1];
+                    const sectionTitle = Object.entries(SECTION_TITLES).find(
+                      ([id]) => q.id === id
+                    )?.[1];
                     if (sectionTitle && sectionTitle !== currentSection) {
                       currentSection = sectionTitle;
                       rows.push(
@@ -405,9 +584,25 @@ export default function RepartoAnalysis({
                       );
                     }
 
-                    const answers = responsesByReparto.map((r) =>
-                      renderAnswer(r.answers?.[q.id])
-                    );
+                    const answers = responsesByReparto.map((r) => {
+                      const val = r.answers?.[q.id];
+
+                      if (
+                        q.id === "foto_postazione" &&
+                        typeof val === "string" &&
+                        val.startsWith("data:image")
+                      ) {
+                        return (
+                          <img
+                            src={val}
+                            alt={`Foto ${r.answers?.meta_nome || ""}`}
+                            className="mx-auto h-16 w-16 object-cover rounded"
+                          />
+                        );
+                      }
+
+                      return renderAnswer(val);
+                    });
 
                     if (answers.every((a) => a === "—")) return;
 

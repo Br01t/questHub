@@ -73,13 +73,19 @@ const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "5_note", label: "5 - Necessità di intervento (note)" },
   { id: "6.1", label: "6.1 Superficie del piano adeguata (SI/NO)" },
   { id: "6.2", label: "6.2 Altezza del piano 70-80cm (SI/NO)" },
-  { id: "6.3", label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)" },
+  {
+    id: "6.3",
+    label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)",
+  },
   { id: "6_note", label: "6 - Necessità di intervento (note)" },
   { id: "7.1", label: "7.1 Altezza sedile regolabile" },
   { id: "7.2", label: "7.2 Inclinazione sedile regolabile" },
   { id: "7.3", label: "7.3 Schienale con supporto dorso-lombare" },
   { id: "7.4", label: "7.4 Schienale regolabile in altezza" },
-  { id: "7.5", label: "7.5 Schienale/seduta bordi smussati/materiali appropriati" },
+  {
+    id: "7.5",
+    label: "7.5 Schienale/seduta bordi smussati/materiali appropriati",
+  },
   { id: "7.6", label: "7.6 Presenza di ruote/meccanismo spostamento" },
   { id: "7_note", label: "7 - Necessità di intervento (note)" },
   { id: "8.1", label: "8.1 Monitor orientabile/inclinabile" },
@@ -151,15 +157,15 @@ export default function CompanyAnalysis({
       const q = query(collection(db, "companies"));
       const snap = await getDocs(q);
       let data = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Company[];
-      
+
       // Filtra le aziende in base ai permessi utente
       if (!isSuperAdmin) {
         // Per utenti normali, mostra solo le aziende assegnate
         const userCompanyIds = userProfile?.companyIds || [];
-        data = data.filter(company => userCompanyIds.includes(company.id));
+        data = data.filter((company) => userCompanyIds.includes(company.id));
       }
       // Per super_admin, mostra tutte le aziende (nessun filtro)
-      
+
       setCompanies(data);
     } catch (err) {
       console.error("load companies", err);
@@ -202,7 +208,11 @@ export default function CompanyAnalysis({
 
     const companyName =
       companies.find((c) => c.id === selectedCompany)?.name || selectedCompany;
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
     const marginLeft = 14;
 
     doc.setFontSize(16);
@@ -214,8 +224,9 @@ export default function CompanyAnalysis({
     let currentSection = "";
 
     FULL_QUESTIONS.forEach((q) => {
-      const sectionTitle =
-        Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
+      const sectionTitle = Object.entries(SECTION_TITLES).find(
+        ([id]) => q.id === id
+      )?.[1];
       if (sectionTitle && sectionTitle !== currentSection) {
         currentSection = sectionTitle;
         body.push([sectionTitle, ...Array(workers.length).fill("")]);
@@ -250,7 +261,9 @@ export default function CompanyAnalysis({
     );
 
     doc.save(
-      `report_azienda_${companyName}_${new Date().toISOString().slice(0, 10)}.pdf`
+      `report_azienda_${companyName}_${new Date()
+        .toISOString()
+        .slice(0, 10)}.pdf`
     );
   };
 
@@ -341,7 +354,9 @@ export default function CompanyAnalysis({
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedCompany === "all" ? "opacity-100" : "opacity-0"
+                          selectedCompany === "all"
+                            ? "opacity-100"
+                            : "opacity-0"
                         )}
                       />
                       Tutte
@@ -358,7 +373,9 @@ export default function CompanyAnalysis({
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            selectedCompany === c.id ? "opacity-100" : "opacity-0"
+                            selectedCompany === c.id
+                              ? "opacity-100"
+                              : "opacity-0"
                           )}
                         />
                         {c.name}
@@ -410,10 +427,12 @@ export default function CompanyAnalysis({
                 {(() => {
                   let currentSection = "";
                   const rows: JSX.Element[] = [];
+
                   FULL_QUESTIONS.forEach((q) => {
-                    const sectionTitle =
-                      Object.entries(SECTION_TITLES).find(([id]) => q.id === id)
-                        ?.[1];
+                    const sectionTitle = Object.entries(SECTION_TITLES).find(
+                      ([id]) => q.id === id
+                    )?.[1];
+
                     if (sectionTitle && sectionTitle !== currentSection) {
                       currentSection = sectionTitle;
                       rows.push(
@@ -431,9 +450,25 @@ export default function CompanyAnalysis({
                       );
                     }
 
-                    const answers = responsesByCompany.map((r) =>
-                      renderAnswer(r.answers?.[q.id])
-                    );
+                    const answers = responsesByCompany.map((r) => {
+                      const val = r.answers?.[q.id];
+
+                      // Mostra l'immagine se è la colonna 'foto_postazione'
+                      if (
+                        q.id === "foto_postazione" &&
+                        typeof val === "string"
+                      ) {
+                        return (
+                          <img
+                            src={val}
+                            alt={`Foto ${r.answers?.meta_nome || ""}`}
+                            className="mx-auto h-16 w-16 object-cover rounded"
+                          />
+                        );
+                      }
+
+                      return renderAnswer(val);
+                    });
 
                     if (answers.every((a) => a === "—")) return;
 
@@ -453,6 +488,7 @@ export default function CompanyAnalysis({
                       </tr>
                     );
                   });
+
                   return rows;
                 })()}
               </tbody>
