@@ -581,14 +581,38 @@ export default function RepartoAnalysis({
                   <th className="text-left p-2 border-r font-semibold w-1/3">
                     Domanda
                   </th>
-                  {workers.map((w) => (
-                    <th
-                      key={w}
-                      className="text-center p-2 border-r font-semibold"
-                    >
-                      {w}
-                    </th>
-                  ))}
+                  {workers.map((w) => {
+                    const response = responsesByReparto.find(
+                      (r) => r.answers?.meta_nome === w
+                    );
+                    console.log(
+                      "🧾 Trovata risposta per lavoratore",
+                      w,
+                      response
+                    );
+                    const reparto = response?.answers?.meta_reparto;
+                    const companyId = response?.companyId;
+                    const siteId = response?.siteId;
+
+                    const companyName =
+                      companyId &&
+                      availableCompanies.find((c) => c.id === companyId)?.name;
+
+                    const siteName =
+                      siteId &&
+                      availableSites.find((s) => s.id === siteId)?.name;
+
+                    return (
+                      <th
+                        key={w}
+                        className="text-center p-2 border-r font-semibold"
+                      >
+                        {w}
+                        {companyName ? ` - ${companyName}` : ""}
+                        {siteName ? ` (${siteName})` : ""}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
