@@ -1,10 +1,4 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -47,13 +41,10 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 
 const AppRoutes = () => (
   <Routes>
-    {/* Redirect iniziale */}
     <Route path="/" element={<Navigate to="/login" replace />} />
 
-    {/* Public routes */}
     <Route path="/login" element={<Login />} />
 
-    {/* Protected routes */}
     <Route
       path="/dashboard"
       element={
@@ -95,9 +86,7 @@ const AppRoutes = () => (
       }
     />
     <Route path="/final-report" element={<FinalReport />} />
-    {/* Not found */}
     <Route path="*" element={<NotFound />} />
-    {/* Legal */}
     <Route path="/privacy" element={<PrivacyPolicy />} />
     <Route path="/cookies" element={<CookiePolicy />} />
   </Routes>

@@ -1,12 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface Response {
   id: string;
@@ -17,67 +12,19 @@ interface Response {
   siteId?: string;
   sector: string;
 }
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  PieChart,
-  Pie,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 import { collection, query, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import {
-  ClipboardList,
-  FileText,
-  LogOut,
-  Users,
-  PenSquare,
-  BarChart3,
-  Shield,
-  Building2,
-  MapPin,
-  ChevronDown,
-  Check,
-} from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { ClipboardList, FileText, LogOut, Users, PenSquare, BarChart3, Shield, Building2, MapPin, ChevronDown, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { doc, getDoc } from "firebase/firestore";
 
-const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--secondary))",
-  "hsl(var(--accent))",
-  "hsl(var(--destructive))",
-  "#8884d8",
-  "#82ca9d",
-  "#ffc658",
-];
+const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--destructive))", "#8884d8", "#82ca9d", "#ffc658"];
 
 const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "meta_nome", label: "Nome valutato / lavoratore" },
@@ -150,7 +97,7 @@ const Dashboard = () => {
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [openCompany, setOpenCompany] = useState(false);
   const [openSite, setOpenSite] = useState(false);
-  
+
   const ALL_COMPANIES_ID = "__ALL_COMPANIES__";
   const ALL_SITES_ID = "__ALL_SITES__";
 
@@ -171,26 +118,14 @@ const Dashboard = () => {
   }, [selectedCompanyId]);
 
   useEffect(() => {
-    if (
-      selectedCompanyId &&
-      selectedSiteId &&
-      availableCompanies.length &&
-      availableSites.length
-    ) {
+    if (selectedCompanyId && selectedSiteId && availableCompanies.length && availableSites.length) {
       // Non salvare in localStorage se sono selezionate "tutte"
-      if (
-        selectedCompanyId === ALL_COMPANIES_ID ||
-        selectedSiteId === ALL_SITES_ID
-      ) {
-        console.log(
-          "⚠️ [Dashboard] Skipping save: 'Tutte' selezionato"
-        );
+      if (selectedCompanyId === ALL_COMPANIES_ID || selectedSiteId === ALL_SITES_ID) {
+        console.log("⚠️ [Dashboard] Skipping save: 'Tutte' selezionato");
         return;
       }
 
-      const selectedCompany = availableCompanies.find(
-        (c) => c.id === selectedCompanyId
-      );
+      const selectedCompany = availableCompanies.find((c) => c.id === selectedCompanyId);
       const selectedSite = availableSites.find((s) => s.id === selectedSiteId);
 
       const dataToSave = {
@@ -212,9 +147,7 @@ const Dashboard = () => {
 
   const loadAvailableCompaniesAndSites = async () => {
     try {
-      const companiesSnapshot = await getDocs(
-        query(collection(db, "companies"))
-      );
+      const companiesSnapshot = await getDocs(query(collection(db, "companies")));
       let companies = companiesSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -245,9 +178,7 @@ const Dashboard = () => {
 
   const loadAvailableSitesForCompany = async (companyId: string) => {
     try {
-      const sitesSnapshot = await getDocs(
-        query(collection(db, "companySites"))
-      );
+      const sitesSnapshot = await getDocs(query(collection(db, "companySites")));
       let sites = sitesSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -359,15 +290,13 @@ const Dashboard = () => {
   }, [filteredResponses]);
 
   const { satisfactionData, averageScore } = useMemo(() => {
-    if (filteredResponses.length === 0)
-      return { satisfactionData: [], averageScore: 0 };
+    if (filteredResponses.length === 0) return { satisfactionData: [], averageScore: 0 };
     const satisfactionCounts: Record<string, number> = {};
     let totalScore = 0;
     let totalCount = 0;
     filteredResponses.forEach((r) => {
       const val = r.answers?.q7 || r.answers?.["10.1"] || "";
-      if (typeof val === "string" && val)
-        satisfactionCounts[val] = (satisfactionCounts[val] || 0) + 1;
+      if (typeof val === "string" && val) satisfactionCounts[val] = (satisfactionCounts[val] || 0) + 1;
       const scoreMap: Record<string, number> = {
         Eccellente: 100,
         Ottimo: 90,
@@ -395,11 +324,8 @@ const Dashboard = () => {
         totalCount++;
       }
     });
-    const satisfactionData = Object.entries(satisfactionCounts).map(
-      ([name, value]) => ({ name, value })
-    );
-    const averageScore =
-      totalCount > 0 ? Math.round(totalScore / totalCount) : 0;
+    const satisfactionData = Object.entries(satisfactionCounts).map(([name, value]) => ({ name, value }));
+    const averageScore = totalCount > 0 ? Math.round(totalScore / totalCount) : 0;
     return { satisfactionData, averageScore };
   }, [filteredResponses]);
 
@@ -436,42 +362,30 @@ const Dashboard = () => {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground break-all">
-                {user?.email}
-              </p>
+              <p className="text-xs text-muted-foreground break-all">{user?.email}</p>
 
               <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 {availableCompanies.length === 0 ? (
                   <div className="text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-center">
-                    Nessuna azienda assegnata.{" "}
-                    <br className="hidden sm:block" />
+                    Nessuna azienda assegnata. <br className="hidden sm:block" />
                     Contatta il responsabile per l'abilitazione.
                   </div>
                 ) : (
                   <Popover open={openCompany} onOpenChange={setOpenCompany}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background"
-                      >
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background">
                         <div className="flex items-center gap-1.5">
                           <Building2 className="h-3.5 w-3.5" />
                           <span className="text-xs">
                             {selectedCompanyId === ALL_COMPANIES_ID
                               ? "Tutte le aziende"
-                              : availableCompanies.find(
-                                  (c) => c.id === selectedCompanyId
-                                )?.name || "Seleziona azienda"}
+                              : availableCompanies.find((c) => c.id === selectedCompanyId)?.name || "Seleziona azienda"}
                           </span>
                         </div>
                         <ChevronDown className="h-3.5 w-3.5 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[240px] p-0 bg-background z-50"
-                      align="start"
-                    >
+                    <PopoverContent className="w-[240px] p-0 bg-background z-50" align="start">
                       <Command>
                         <CommandInput placeholder="Cerca azienda..." />
                         <CommandList>
@@ -485,14 +399,7 @@ const Dashboard = () => {
                                   setOpenCompany(false);
                                 }}
                               >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedCompanyId === ALL_COMPANIES_ID
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
+                                <Check className={cn("mr-2 h-4 w-4", selectedCompanyId === ALL_COMPANIES_ID ? "opacity-100" : "opacity-0")} />
                                 Tutte le aziende
                               </CommandItem>
                             )}
@@ -505,14 +412,7 @@ const Dashboard = () => {
                                   setOpenCompany(false);
                                 }}
                               >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedCompanyId === company.id
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
+                                <Check className={cn("mr-2 h-4 w-4", selectedCompanyId === company.id ? "opacity-100" : "opacity-0")} />
                                 {company.name}
                               </CommandItem>
                             ))}
@@ -531,27 +431,19 @@ const Dashboard = () => {
                 ) : (
                   <Popover open={openSite} onOpenChange={setOpenSite}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background"
-                      >
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background">
                         <div className="flex items-center gap-1.5">
                           <MapPin className="h-3.5 w-3.5" />
                           <span className="text-xs">
                             {selectedSiteId === ALL_SITES_ID
                               ? "Tutte le sedi"
-                              : availableSites.find((s) => s.id === selectedSiteId)
-                                  ?.name || "Seleziona sede"}
+                              : availableSites.find((s) => s.id === selectedSiteId)?.name || "Seleziona sede"}
                           </span>
                         </div>
                         <ChevronDown className="h-3.5 w-3.5 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[240px] p-0 bg-background z-50"
-                      align="start"
-                    >
+                    <PopoverContent className="w-[240px] p-0 bg-background z-50" align="start">
                       <Command>
                         <CommandInput placeholder="Cerca sede..." />
                         <CommandList>
@@ -565,14 +457,7 @@ const Dashboard = () => {
                                   setOpenSite(false);
                                 }}
                               >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedSiteId === ALL_SITES_ID
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
+                                <Check className={cn("mr-2 h-4 w-4", selectedSiteId === ALL_SITES_ID ? "opacity-100" : "opacity-0")} />
                                 Tutte le sedi
                               </CommandItem>
                             )}
@@ -585,14 +470,7 @@ const Dashboard = () => {
                                   setOpenSite(false);
                                 }}
                               >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedSiteId === site.id
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
+                                <Check className={cn("mr-2 h-4 w-4", selectedSiteId === site.id ? "opacity-100" : "opacity-0")} />
                                 {site.name}
                               </CommandItem>
                             ))}
@@ -608,20 +486,12 @@ const Dashboard = () => {
 
           <div className="flex gap-2 justify-center sm:justify-end flex-wrap">
             {isSuperAdmin && (
-              <Button
-                variant="default"
-                onClick={() => navigate("/admin")}
-                className="gap-2 w-full sm:w-auto"
-              >
+              <Button variant="default" onClick={() => navigate("/admin")} className="gap-2 w-full sm:w-auto">
                 <Shield className="h-4 w-4" />
                 Gestione Admin
               </Button>
             )}
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="gap-2 w-full sm:w-auto"
-            >
+            <Button variant="outline" onClick={handleLogout} className="gap-2 w-full sm:w-auto">
               <LogOut className="h-4 w-4" />
               Esci
             </Button>
@@ -631,7 +501,6 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Nuovo Questionario */}
           <Card
             className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 hover:-translate-y-1 group"
             onClick={() => navigate("/compile")}
@@ -643,13 +512,10 @@ const Dashboard = () => {
                 </div>
                 <CardTitle className="text-xl">Nuovo Questionario</CardTitle>
               </div>
-              <CardDescription className="text-base">
-                Compila un nuovo questionario di valutazione VDT
-              </CardDescription>
+              <CardDescription className="text-base">Compila un nuovo questionario di valutazione VDT</CardDescription>
             </CardHeader>
           </Card>
 
-          {/* Analisi Dati */}
           <Card
             className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 hover:-translate-y-1 group"
             onClick={() => navigate("/analysis")}
@@ -661,13 +527,10 @@ const Dashboard = () => {
                 </div>
                 <CardTitle className="text-xl">Analisi Dati</CardTitle>
               </div>
-              <CardDescription className="text-base">
-                Visualizza statistiche e analisi dettagliate dei dati raccolti
-              </CardDescription>
+              <CardDescription className="text-base">Visualizza statistiche e analisi dettagliate dei dati raccolti</CardDescription>
             </CardHeader>
           </Card>
 
-          {/* Guida / FAQ */}
           <Card
             className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 hover:-translate-y-1 group"
             onClick={() => navigate("/guide")}
@@ -679,51 +542,37 @@ const Dashboard = () => {
                 </div>
                 <CardTitle className="text-xl">Guida / FAQ</CardTitle>
               </div>
-              <CardDescription className="text-base">
-                Scopri come usare l'app e visualizza le FAQ
-              </CardDescription>
+              <CardDescription className="text-base">Scopri come usare l'app e visualizza le FAQ</CardDescription>
             </CardHeader>
           </Card>
         </div>
 
-        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="border-l-4 border-l-primary shadow-md">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs font-medium uppercase tracking-wide">
-                  Risposte Totali
-                </CardDescription>
+                <CardDescription className="text-xs font-medium uppercase tracking-wide">Risposte Totali</CardDescription>
                 <Users className="h-5 w-5 text-primary/50" />
               </div>
               <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
                 {filteredResponses.length}
               </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Questionari completati
-              </p>
+              <p className="text-xs text-muted-foreground">Questionari completati</p>
             </CardHeader>
           </Card>
 
           <Card className="border-l-4 border-l-accent shadow-md">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs font-medium uppercase tracking-wide">
-                  Questionari Attivi
-                </CardDescription>
+                <CardDescription className="text-xs font-medium uppercase tracking-wide">Questionari Attivi</CardDescription>
                 <FileText className="h-5 w-5 text-accent/50" />
               </div>
-              <CardTitle className="text-4xl font-bold text-accent">
-                1
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Attualmente disponibile
-              </p>
+              <CardTitle className="text-4xl font-bold text-accent">1</CardTitle>
+              <p className="text-xs text-muted-foreground">Attualmente disponibile</p>
             </CardHeader>
           </Card>
         </div>
 
-        {/* Analisi Generali */}
         {filteredResponses.length === 0 ? (
           <Card className="shadow-lg border-2">
             <CardContent className="py-16 text-center space-y-4">
@@ -732,14 +581,8 @@ const Dashboard = () => {
                   <FileText className="h-12 w-12 text-muted-foreground" />
                 </div>
               </div>
-              <p className="text-lg text-muted-foreground">
-                Nessun dato disponibile al momento
-              </p>
-              <Button
-                onClick={() => navigate("/compile")}
-                variant="gradient"
-                size="lg"
-              >
+              <p className="text-lg text-muted-foreground">Nessun dato disponibile al momento</p>
+              <Button onClick={() => navigate("/compile")} variant="gradient" size="lg">
                 <PenSquare className="mr-2 h-5 w-5" />
                 Compila il primo questionario
               </Button>
@@ -750,9 +593,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="shadow-lg border-2">
                 <CardHeader className="border-b bg-gradient-to-r from-accent/5 to-transparent">
-                  <CardTitle className="text-xl">
-                    Distibuzione Questionari attivi per Settore
-                  </CardTitle>
+                  <CardTitle className="text-xl">Distibuzione Questionari attivi per Settore</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div style={{ height: 260 }}>
@@ -764,10 +605,7 @@ const Dashboard = () => {
                         <Tooltip />
                         <Bar dataKey="count" fill={COLORS[0]}>
                           {responsesBySector.map((_, i) => (
-                            <Cell
-                              key={`cell-${i}`}
-                              fill={COLORS[i % COLORS.length]}
-                            />
+                            <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -787,48 +625,28 @@ const Dashboard = () => {
               {groupedByQuestion
                 .filter((q) => q.total > 0)
                 .map((q) => (
-                  <AccordionItem
-                    key={q.id}
-                    value={q.id}
-                    className="border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow"
-                  >
+                  <AccordionItem key={q.id} value={q.id} className="border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
                     <AccordionTrigger className="px-4 py-3 flex items-center justify-between text-left">
                       <div>
                         <h3 className="text-sm font-medium">{q.label}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {q.total} risposte totali
-                        </p>
+                        <p className="text-xs text-muted-foreground">{q.total} risposte totali</p>
                       </div>
                     </AccordionTrigger>
 
                     <AccordionContent className="px-4 pb-4 pt-2">
                       {q.data.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">
-                          Nessuna risposta
-                        </div>
+                        <div className="text-sm text-muted-foreground">Nessuna risposta</div>
                       ) : (
                         <div style={{ height: 260 }}>
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              layout="horizontal"
-                              data={q.data.sort((a, b) => b.value - a.value)}
-                            >
+                            <BarChart layout="horizontal" data={q.data.sort((a, b) => b.value - a.value)}>
                               <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis
-                                dataKey="name"
-                                interval={0}
-                                angle={0}
-                                textAnchor="middle"
-                                tick={{ fontSize: 12, width: 100 }}
-                              />
+                              <XAxis dataKey="name" interval={0} angle={0} textAnchor="middle" tick={{ fontSize: 12, width: 100 }} />
                               <YAxis allowDecimals={false} />
                               <Tooltip />
                               <Bar dataKey="value">
                                 {q.data.map((_, i) => (
-                                  <Cell
-                                    key={`cell-${i}`}
-                                    fill={COLORS[i % COLORS.length]}
-                                  />
+                                  <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                                 ))}
                               </Bar>
                             </BarChart>

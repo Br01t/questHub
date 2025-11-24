@@ -19,7 +19,6 @@ type ResponseDoc = {
   userEmail?: string | null;
 };
 
-// 🔹 ARRAY COMPLETO con tutte le 50+ domande (copiato da WorkerAnalysis)
 const FULL_QUESTIONS: { id: string; label: string }[] = [
   { id: "meta_nome", label: "Nome valutato / lavoratore" },
   { id: "meta_postazione", label: "Postazione n." },
@@ -83,51 +82,41 @@ const FULL_QUESTIONS: { id: string; label: string }[] = [
 export default function FinalReport() {
   const navigate = useNavigate();
   const location = useLocation();
-const { filteredResponses: rawResponses, selectedWorker } = location.state || {};
+  const { filteredResponses: rawResponses, selectedWorker } = location.state || {};
 
-const filteredResponses: ResponseDoc[] = useMemo(() => {
-  if (!rawResponses) return [];
+  const filteredResponses: ResponseDoc[] = useMemo(() => {
+    if (!rawResponses) return [];
 
-  // Ricrea `toDate()` se mancante
-  return rawResponses.map((r) => ({
-    ...r,
-    createdAt: r.createdAt && typeof r.createdAt.toDate !== "function"
-      ? { toDate: () => new Date(r.createdAt.seconds * 1000) }
-      : r.createdAt,
-  }));
-}, [rawResponses]);
+    return rawResponses.map((r) => ({
+      ...r,
+      createdAt: r.createdAt && typeof r.createdAt.toDate !== "function" ? { toDate: () => new Date(r.createdAt.seconds * 1000) } : r.createdAt,
+    }));
+  }, [rawResponses]);
 
   const [notes, setNotes] = useState("");
 
-  // 🔹 Recupera i dati azienda/sede da localStorage
-  const selectedCompanyData = JSON.parse(
-    localStorage.getItem("selectedCompanyData") || "{}"
-  );
+  const selectedCompanyData = JSON.parse(localStorage.getItem("selectedCompanyData") || "{}");
 
-  // Filtra le risposte per il singolo lavoratore
-  const responsesByWorker = (filteredResponses || []).filter(
-    (r) => r.answers?.meta_nome === selectedWorker
-  );
+  const responsesByWorker = (filteredResponses || []).filter((r) => r.answers?.meta_nome === selectedWorker);
 
   const dates = responsesByWorker.map((r) => {
-  const c = r.createdAt;
-  try {
-    if (!c) return "N/D";
-    if (typeof c === "object" && typeof c.toDate === "function") {
-      return format(c.toDate(), "dd/MM/yyyy HH:mm");
+    const c = r.createdAt;
+    try {
+      if (!c) return "N/D";
+      if (typeof c === "object" && typeof c.toDate === "function") {
+        return format(c.toDate(), "dd/MM/yyyy HH:mm");
+      }
+      if (c instanceof Date) {
+        return format(c, "dd/MM/yyyy HH:mm");
+      }
+      if (typeof c === "string" || typeof c === "number") {
+        return format(new Date(c), "dd/MM/yyyy HH:mm");
+      }
+      return "N/D";
+    } catch {
+      return "N/D";
     }
-    if (c instanceof Date) {
-      return format(c, "dd/MM/yyyy HH:mm");
-    }
-    if (typeof c === "string" || typeof c === "number") {
-      return format(new Date(c), "dd/MM/yyyy HH:mm");
-    }
-    return "N/D";
-  } catch {
-    return "N/D";
-  }
-});
-
+  });
 
   const renderAnswer = (val: AnswerValue) => {
     if (val === undefined || val === null || val === "") return "—";
@@ -136,26 +125,18 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
     if (str.startsWith("data:image/") || str.startsWith("http")) {
       return (
         <a href={str} target="_blank" rel="noopener noreferrer">
-          <img
-            src={str}
-            alt="foto postazione"
-            className="w-20 h-20 object-cover rounded-md mx-auto shadow-sm hover:scale-105 transition-transform"
-          />
+          <img src={str} alt="foto postazione" className="w-20 h-20 object-cover rounded-md mx-auto shadow-sm hover:scale-105 transition-transform" />
         </a>
       );
     }
     return str;
   };
 
-  // 🔹 Funzione per verificare se una domanda ha risposte diverse
-  const isTextQuestion = (id: string): boolean =>
-    id.includes("_note") || id.startsWith("meta_") || id === "foto_postazione";
+  const isTextQuestion = (id: string): boolean => id.includes("_note") || id.startsWith("meta_") || id === "foto_postazione";
 
   const hasDifferentAnswers = (questionId: string): boolean => {
     if (isTextQuestion(questionId)) return false;
-    const values = responsesByWorker.map((r) =>
-      renderAnswer(r.answers?.[questionId])
-    );
+    const values = responsesByWorker.map((r) => renderAnswer(r.answers?.[questionId]));
     return new Set(values).size > 1;
   };
 
@@ -200,10 +181,7 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
       "10.1": "10) SOFTWARE",
     };
 
-    // 🔹 Costruzione del body con sezioni
-    type RowCell =
-      | string
-      | { content: string; colSpan?: number; styles?: Record<string, unknown> };
+    type RowCell = string | { content: string; colSpan?: number; styles?: Record<string, unknown> };
     const body: {
       row: RowCell[];
       questionId?: string;
@@ -212,10 +190,8 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
     let currentSection = "";
 
     FULL_QUESTIONS.forEach((q) => {
-      const sectionTitle = Object.entries(SECTION_TITLES).find(
-        ([id]) => q.id === id
-      )?.[1];
-      
+      const sectionTitle = Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
+
       if (sectionTitle && sectionTitle !== currentSection) {
         currentSection = sectionTitle;
         body.push({
@@ -244,7 +220,7 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
         }
         return str;
       });
-      
+
       body.push({ row: [q.label, ...answers], questionId: q.id });
     });
 
@@ -263,25 +239,18 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
         const rowMeta = body[data.row.index];
         if (!rowMeta) return;
 
-        // 🔸 Intestazioni di sezione → grigio chiaro fisso
         if (rowMeta.isSectionHeader) {
           data.cell.styles.fillColor = [230, 230, 230];
           data.cell.styles.fontStyle = "bold";
           return;
         }
 
-        // 🔸 Evidenziazione differenze solo per domande reali
-        if (
-          rowMeta.questionId &&
-          hasDifferentAnswers(rowMeta.questionId) &&
-          data.section === "body"
-        ) {
+        if (rowMeta.questionId && hasDifferentAnswers(rowMeta.questionId) && data.section === "body") {
           data.cell.styles.fillColor = [255, 255, 180];
         }
       },
     });
 
-    // 🔹 Aggiungi note aggiuntive se presenti
     if (notes.trim()) {
       const finalY = (doc as any).lastAutoTable.finalY + 10;
       doc.setFontSize(12);
@@ -296,7 +265,9 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
 
   return (
     <div className="p-6 space-y-6">
-      <Button variant="outline" onClick={() => navigate(-1)}>← Torna indietro</Button>
+      <Button variant="outline" onClick={() => navigate(-1)}>
+        ← Torna indietro
+      </Button>
 
       <Card className="shadow-md">
         <CardHeader>
@@ -319,13 +290,14 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
               <tr className="bg-accent/30 border-b">
                 <th className="text-left p-2 border-r font-semibold">Domande</th>
                 {dates.map((d, idx) => (
-                  <th key={idx} className="text-center p-2 border-r font-semibold">Data: {d}</th>
+                  <th key={idx} className="text-center p-2 border-r font-semibold">
+                    Data: {d}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {(() => {
-                // 🔹 Definizione delle sezioni (come in WorkerAnalysis)
                 const SECTION_TITLES: Record<string, string> = {
                   meta_nome: "INTESTAZIONE",
                   "1.1": "1) ORGANIZZAZIONE DEL LAVORO",
@@ -344,21 +316,13 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
                 const rows: JSX.Element[] = [];
 
                 FULL_QUESTIONS.forEach((q) => {
-                  const sectionTitle = Object.entries(SECTION_TITLES).find(
-                    ([id]) => q.id === id
-                  )?.[1];
-                  
+                  const sectionTitle = Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
+
                   if (sectionTitle && sectionTitle !== currentSection) {
                     currentSection = sectionTitle;
                     rows.push(
-                      <tr
-                        key={`section-${currentSection}`}
-                        className="bg-gray-200 text-left border-t-4 border-gray-300"
-                      >
-                        <td
-                          colSpan={responsesByWorker.length + 1}
-                          className="p-2 font-semibold text-gray-800 uppercase tracking-wide"
-                        >
+                      <tr key={`section-${currentSection}`} className="bg-gray-200 text-left border-t-4 border-gray-300">
+                        <td colSpan={responsesByWorker.length + 1} className="p-2 font-semibold text-gray-800 uppercase tracking-wide">
                           {currentSection}
                         </td>
                       </tr>
@@ -367,13 +331,7 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
 
                   const changed = hasDifferentAnswers(q.id);
                   rows.push(
-                    <tr
-                      key={q.id}
-                      className={cn(
-                        "border-b hover:bg-accent/10",
-                        changed ? "bg-yellow-100/70" : ""
-                      )}
-                    >
+                    <tr key={q.id} className={cn("border-b hover:bg-accent/10", changed ? "bg-yellow-100/70" : "")}>
                       <td className="p-2 border-r font-medium">{q.label}</td>
                       {responsesByWorker.map((resp) => (
                         <td key={resp.id + q.id} className="p-2 text-center">
@@ -396,12 +354,7 @@ const filteredResponses: ResponseDoc[] = useMemo(() => {
           <CardTitle>Note aggiuntive</CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea
-            placeholder="Inserisci note aggiuntive..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full"
-          />
+          <Textarea placeholder="Inserisci note aggiuntive..." value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full" />
         </CardContent>
       </Card>
 

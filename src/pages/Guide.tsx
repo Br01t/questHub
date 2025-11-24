@@ -8,28 +8,34 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 const FAQS = [
   {
     question: "Cos'è QuestHub?",
-    answer: "QuestHub è un'applicazione per la gestione e l'analisi dei questionari di valutazione VDT per lavoratori e uffici di diverse aziende e sedi."
+    answer:
+      "QuestHub è un'applicazione per la gestione e l'analisi dei questionari di valutazione VDT per lavoratori e uffici di diverse aziende e sedi.",
   },
   {
     question: "Come posso compilare un nuovo questionario?",
-    answer: "Clicca su 'Nuovo Questionario' nella dashboard e compila tutte le sezioni richieste. Le domande obbligatorie sono controllate automaticamente e puoi caricare immagini con anteprima."
+    answer:
+      "Clicca su 'Nuovo Questionario' nella dashboard e compila tutte le sezioni richieste. Le domande obbligatorie sono controllate automaticamente e puoi caricare immagini con anteprima.",
   },
   {
     question: "Come visualizzo le analisi dei dati?",
-    answer: "Clicca su 'Analisi Dati' nella dashboard per vedere statistiche, grafici e distribuzioni. Puoi analizzare i dati per lavoratore, reparto, sede o azienda."
+    answer:
+      "Clicca su 'Analisi Dati' nella dashboard per vedere statistiche, grafici e distribuzioni. Puoi analizzare i dati per lavoratore, reparto, sede o azienda.",
   },
   {
     question: "Posso esportare i report in PDF?",
-    answer: "Sì, dalle pagine di analisi puoi esportare PDF dei report per ogni lavoratore (con confronto temporale) o generare relazioni finali personalizzabili con intestazione, corpo e conclusioni."
+    answer:
+      "Sì, dalle pagine di analisi puoi esportare PDF dei report per ogni lavoratore (con confronto temporale) o generare relazioni finali personalizzabili con intestazione, corpo e conclusioni.",
   },
   {
     question: "Qual è la differenza tra User e Admin?",
-    answer: "Gli User possono compilare questionari solo per aziende e sedi assegnate e visualizzare i relativi dati. Gli Admin hanno accesso completo: gestiscono aziende, sedi, utenti e possono vedere tutti i dati."
+    answer:
+      "Gli User possono compilare questionari solo per aziende e sedi assegnate e visualizzare i relativi dati. Gli Admin hanno accesso completo: gestiscono aziende, sedi, utenti e possono vedere tutti i dati.",
   },
   {
     question: "Come funzionano i filtri per azienda e sede?",
-    answer: "Nella home puoi selezionare azienda e sede dalle tendine accanto al logo per visualizzare i grafici aggiornati. Nelle analisi, i filtri ti permettono di concentrarti sui dati specifici (ancora in perfezionamento)."
-  }
+    answer:
+      "Nella home puoi selezionare azienda e sede dalle tendine accanto al logo per visualizzare i grafici aggiornati. Nelle analisi, i filtri ti permettono di concentrarti sui dati specifici (ancora in perfezionamento).",
+  },
 ];
 
 const FEATURES = [
@@ -41,8 +47,8 @@ const FEATURES = [
       "Domande colorate nelle tendine per facilitare la navigazione",
       "Caricamento immagini con anteprima prima dell'invio",
       "User: compilazione solo per aziende/sedi assegnate",
-      "Admin: compilazione per qualsiasi azienda e sede"
-    ]
+      "Admin: compilazione per qualsiasi azienda e sede",
+    ],
   },
   {
     icon: Settings,
@@ -51,7 +57,7 @@ const FEATURES = [
       "Creazione ed eliminazione di aziende e sedi",
       "Assegnazione di aziende e sedi agli utenti",
       "Gestione assegnazione autorizzazione admin",
-    ]
+    ],
   },
   {
     icon: Shield,
@@ -60,8 +66,8 @@ const FEATURES = [
       "Controllo accessi generale basato su ruoli",
       "User: consentito solamente compilare e visualizzare dati di aziende/sedi assegnate",
       "Admin: accesso completo a tutti i dati distinguibili per azienda/sede",
-      "Filtri automatici basati sui permessi utente"
-    ]
+      "Filtri automatici basati sui permessi utente",
+    ],
   },
   {
     icon: BarChart3,
@@ -73,8 +79,8 @@ const FEATURES = [
       "Analisi per sede",
       "Analisi per azienda",
       "Confronto tra reparti (in sviluppo distinzione per azienda)",
-      "Grafici aggiornati in tempo reale per azienda/sede selezionata"
-    ]
+      "Grafici aggiornati in tempo reale per azienda/sede selezionata",
+    ],
   },
 ];
 
@@ -83,7 +89,7 @@ const WIP_ITEMS = [
   "Separazione completa dei reparti per azienda",
   "Gestione avanzata grafici per confronto reparti",
   "Ottimizzazione stile mobile",
-  "Possibili aggiunte: creazione questionari personalizzati da admin + varie funzionalità extra"
+  "Possibili aggiunte: creazione questionari personalizzati da admin + varie funzionalità extra",
 ];
 
 const Guide = () => {
@@ -91,7 +97,6 @@ const Guide = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
-      {/* HEADER */}
       <header className="border-b bg-card/80 backdrop-blur-md shadow-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
@@ -111,21 +116,17 @@ const Guide = () => {
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
       <main className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
-        
-        {/* DEMO ALERT */}
         <Alert className="border-2 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
           <AlertCircle className="h-5 w-5 text-amber-600" />
           <AlertDescription className="text-amber-900 dark:text-amber-100">
             <span className="font-semibold">Versione Demo - Work in Progress</span>
             <br />
-            Questa è una versione dimostrativa dell'applicazione, ancora in fase di sviluppo. 
-            Tutte le funzionalità sono modificabili, perfezionabili e implementabili in versioni future.
+            Questa è una versione dimostrativa dell'applicazione, ancora in fase di sviluppo. Tutte le funzionalità sono modificabili, perfezionabili
+            e implementabili in versioni future.
           </AlertDescription>
         </Alert>
 
-        {/* FUNZIONALITÀ PRINCIPALI */}
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
             <CardTitle className="text-2xl flex items-center gap-2">
@@ -156,7 +157,6 @@ const Guide = () => {
           </CardContent>
         </Card>
 
-        {/* DASHBOARD E VISUALIZZAZIONE */}
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b">
             <CardTitle className="text-xl flex items-center gap-2">
@@ -184,7 +184,6 @@ const Guide = () => {
           </CardContent>
         </Card>
 
-        {/* NOTE SUI DATI DEMO */}
         <Card className="shadow-lg border-2 border-blue-200 dark:border-blue-800">
           <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-b">
             <CardTitle className="text-xl flex items-center gap-2">
@@ -194,8 +193,8 @@ const Guide = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground mb-4">
-              I dati presenti sono <span className="font-semibold">fittizi e casuali</span>, inseriti durante lo sviluppo 
-              per verificare le funzionalità, ma consentono già di testare:
+              I dati presenti sono <span className="font-semibold">fittizi e casuali</span>, inseriti durante lo sviluppo per verificare le
+              funzionalità, ma consentono già di testare:
             </p>
             <ul className="space-y-2">
               <li className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -210,7 +209,6 @@ const Guide = () => {
           </CardContent>
         </Card>
 
-        {/* IN SVILUPPO */}
         <Card className="shadow-lg border-2 border-orange-200 dark:border-orange-800">
           <CardHeader className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-b">
             <CardTitle className="text-xl flex items-center gap-2">
@@ -231,7 +229,6 @@ const Guide = () => {
           </CardContent>
         </Card>
 
-        {/* FAQ */}
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
             <CardTitle className="text-2xl">Domande Frequenti (FAQ)</CardTitle>
@@ -248,7 +245,6 @@ const Guide = () => {
             </Accordion>
           </CardContent>
         </Card>
-
       </main>
     </div>
   );

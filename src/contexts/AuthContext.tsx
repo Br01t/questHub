@@ -1,24 +1,12 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from "react";
-import {
-  User,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-} from "firebase/auth";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { UserProfile } from "@/types/user"; // usa la tua tipizzazione se disponibile
+import { UserProfile } from "@/types/user";
 
 interface AuthContextType {
   user: User | null;
-  userProfile: UserProfile | null;
+  userProfile: (UserProfile & { id?: string }) | null;
   loading: boolean;
   isSuperAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -42,7 +30,7 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<(UserProfile & { id?: string }) | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadUserProfile = async (uid: string) => {
@@ -80,11 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signup = async (email: string, password: string) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
       await setDoc(doc(db, "userProfiles", userCredential.user.uid), {
         email,
@@ -108,11 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
       setLoading(true);
 
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
       await loadUserProfile(userCredential.user.uid);
       setUser(userCredential.user);
@@ -147,9 +127,5 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };

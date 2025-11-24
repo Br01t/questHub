@@ -1,20 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -48,7 +38,7 @@ export default function Analysis() {
   const [tab, setTab] = useState<"workers" | "reparti" | "sedi" | "aziende" | "traReparti">("workers");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  
+
   const [availableCompanies, setAvailableCompanies] = useState<{ id: string; name: string }[]>([]);
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState<string>("all");
   const [availableSites, setAvailableSites] = useState<{ id: string; name: string; companyId: string }[]>([]);
@@ -62,7 +52,7 @@ export default function Analysis() {
     load();
     loadCompaniesAndSites();
   }, [user]);
-  
+
   useEffect(() => {
     if (selectedCompanyFilter && selectedCompanyFilter !== "all") {
       loadSitesForCompany(selectedCompanyFilter);
@@ -77,7 +67,10 @@ export default function Analysis() {
     try {
       const q = query(collection(db, "responses"));
       const snap = await getDocs(q);
-      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as ResponseDoc[];
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as ResponseDoc[];
       setResponses(data);
     } catch (err) {
       console.error("load responses", err);
@@ -135,7 +128,7 @@ export default function Analysis() {
 
   const filteredResponses = useMemo(() => {
     let filtered = responses;
-    
+
     // Filtro per permessi utente
     if (!isSuperAdmin && userProfile) {
       filtered = filtered.filter((r) => {
@@ -145,26 +138,26 @@ export default function Analysis() {
             return false;
           }
         }
-        
+
         // Se l'utente ha sedi assegnate, mostra solo le risposte di quelle sedi
         if (userProfile.siteIds && userProfile.siteIds.length > 0) {
           return r.siteId && userProfile.siteIds.includes(r.siteId);
         }
-        
+
         return true;
       });
     }
-    
+
     // Filtro per azienda selezionata
     if (selectedCompanyFilter && selectedCompanyFilter !== "all") {
       filtered = filtered.filter((r) => r.companyId === selectedCompanyFilter);
     }
-    
+
     // Filtro per sede selezionata
     if (selectedSiteFilter && selectedSiteFilter !== "all") {
       filtered = filtered.filter((r) => r.siteId === selectedSiteFilter);
     }
-    
+
     // Filtro per date
     if (dateFrom) {
       filtered = filtered.filter((r) => {
@@ -199,11 +192,7 @@ export default function Analysis() {
           </div>
 
           <div className="flex justify-center sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/dashboard")}
-              className="gap-2 w-full sm:w-auto"
-            >
+            <Button variant="outline" onClick={() => navigate("/dashboard")} className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="h-4 w-4" />
               Dashboard
             </Button>
@@ -227,25 +216,13 @@ export default function Analysis() {
                 <label className="text-sm font-medium">Data inizio</label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[240px] justify-start text-left font-normal",
-                        !dateFrom && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateFrom ? format(dateFrom, "dd/MM/yyyy") : <span>Seleziona data</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateFrom}
-                      onSelect={setDateFrom}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -254,25 +231,13 @@ export default function Analysis() {
                 <label className="text-sm font-medium">Data fine</label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[240px] justify-start text-left font-normal",
-                        !dateTo && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateTo ? format(dateTo, "dd/MM/yyyy") : <span>Seleziona data</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateTo}
-                      onSelect={setDateTo}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -302,15 +267,25 @@ export default function Analysis() {
           <CardContent className="pt-6 overflow-x-hidden px-2 sm:px-4">
             <Tabs value={tab} onValueChange={(v: "workers" | "reparti" | "sedi" | "aziende" | "traReparti") => setTab(v)}>
               <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full h-auto bg-muted p-2 rounded-lg">
-                <TabsTrigger value="workers" className="text-xs sm:text-sm whitespace-nowrap">Per Lavoratore</TabsTrigger>
-                <TabsTrigger value="reparti" className="text-xs sm:text-sm whitespace-nowrap">Per Reparto</TabsTrigger>
-                <TabsTrigger value="sedi" className="text-xs sm:text-sm whitespace-nowrap">Per Sede</TabsTrigger>
-                <TabsTrigger value="aziende" className="text-xs sm:text-sm whitespace-nowrap">Per Azienda</TabsTrigger>
-                <TabsTrigger value="traReparti" className="text-xs sm:text-sm whitespace-nowrap col-span-2 sm:col-span-1">Tra Reparti</TabsTrigger>
+                <TabsTrigger value="workers" className="text-xs sm:text-sm whitespace-nowrap">
+                  Per Lavoratore
+                </TabsTrigger>
+                <TabsTrigger value="reparti" className="text-xs sm:text-sm whitespace-nowrap">
+                  Per Reparto
+                </TabsTrigger>
+                <TabsTrigger value="sedi" className="text-xs sm:text-sm whitespace-nowrap">
+                  Per Sede
+                </TabsTrigger>
+                <TabsTrigger value="aziende" className="text-xs sm:text-sm whitespace-nowrap">
+                  Per Azienda
+                </TabsTrigger>
+                <TabsTrigger value="traReparti" className="text-xs sm:text-sm whitespace-nowrap col-span-2 sm:col-span-1">
+                  Tra Reparti
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="workers" className="mt-8">
-                <WorkerAnalysis 
+                <WorkerAnalysis
                   filteredResponses={filteredResponses}
                   userProfile={userProfile}
                   isSuperAdmin={isSuperAdmin}
@@ -324,7 +299,7 @@ export default function Analysis() {
               </TabsContent>
 
               <TabsContent value="reparti" className="mt-8">
-                <RepartoAnalysis 
+                <RepartoAnalysis
                   filteredResponses={filteredResponses}
                   dateFrom={dateFrom}
                   dateTo={dateTo}
@@ -338,7 +313,7 @@ export default function Analysis() {
               </TabsContent>
 
               <TabsContent value="sedi" className="mt-8">
-                <SiteAnalysis 
+                <SiteAnalysis
                   filteredResponses={filteredResponses}
                   userProfile={userProfile}
                   isSuperAdmin={isSuperAdmin}
@@ -352,7 +327,7 @@ export default function Analysis() {
               </TabsContent>
 
               <TabsContent value="aziende" className="mt-8">
-                <CompanyAnalysis 
+                <CompanyAnalysis
                   filteredResponses={filteredResponses}
                   userProfile={userProfile}
                   isSuperAdmin={isSuperAdmin}
@@ -366,11 +341,7 @@ export default function Analysis() {
               </TabsContent>
 
               <TabsContent value="traReparti" className="mt-8">
-                <RepartiComparison 
-                  filteredResponses={filteredResponses}
-                  availableCompanies={availableCompanies}
-                  availableSites={availableSites}
-                />
+                <RepartiComparison filteredResponses={filteredResponses} availableCompanies={availableCompanies} availableSites={availableSites} />
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -1,52 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Send, Building2, MapPin } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type AnswerMap = Record<string, string | boolean | string[]>;
@@ -101,8 +68,7 @@ const questions: Question[] = [
     id: "1.2",
     section: "1) ORGANIZZAZIONE DEL LAVORO",
     type: "radio",
-    question:
-      "1.2 La mansione prevede pause/cambi attività di 15 minuti ogni 120 minuti di applicazione continuativa al VDT",
+    question: "1.2 La mansione prevede pause/cambi attività di 15 minuti ogni 120 minuti di applicazione continuativa al VDT",
     options: ["SI", "NO"],
   },
   {
@@ -110,19 +76,13 @@ const questions: Question[] = [
     section: "1) ORGANIZZAZIONE DEL LAVORO",
     type: "checkbox-multi",
     question: "1.3 Tipo di lavoro prevalente",
-    options: [
-      "inserimento dati",
-      "acquisizione dati",
-      "videoscrittura",
-      "programmazione",
-    ],
+    options: ["inserimento dati", "acquisizione dati", "videoscrittura", "programmazione"],
   },
   {
     id: "1.4",
     section: "1) ORGANIZZAZIONE DEL LAVORO",
     type: "radio",
-    question:
-      "1.4 È stata effettuata informazione al lavoratore per il corretto uso del VDT",
+    question: "1.4 È stata effettuata informazione al lavoratore per il corretto uso del VDT",
     options: ["SI", "NO"],
   },
 
@@ -151,8 +111,7 @@ const questions: Question[] = [
     id: "2.4",
     section: "2) MICROCLIMA",
     type: "radio",
-    question:
-      "2.4 Le attrezzature in dotazione producono eccesso di calore che comporta discomfort termico",
+    question: "2.4 Le attrezzature in dotazione producono eccesso di calore che comporta discomfort termico",
     options: ["SI", "NO"],
   },
 
@@ -168,29 +127,20 @@ const questions: Question[] = [
     section: "3) ILLUMINAZIONE",
     type: "radio",
     question: "Per regolazione luce naturale",
-    options: [
-      "dispositivo copertura regolabile",
-      "copertura non regolabile",
-      "nessun dispositivo",
-    ],
+    options: ["dispositivo copertura regolabile", "copertura non regolabile", "nessun dispositivo"],
   },
   {
     id: "3.2_art",
     section: "3) ILLUMINAZIONE",
     type: "radio",
     question: "Per regolazione luce artificiale",
-    options: [
-      "variatori di luminosità",
-      "accensione a isole",
-      "accensione centralizzata",
-    ],
+    options: ["variatori di luminosità", "accensione a isole", "accensione centralizzata"],
   },
   {
     id: "3.3",
     section: "3) ILLUMINAZIONE",
     type: "radio",
-    question:
-      "Posizione della postazione rispetto alla sorgente di luce naturale",
+    question: "Posizione della postazione rispetto alla sorgente di luce naturale",
     options: ["perpendicolare", "frontale", "di spalle"],
   },
 
@@ -212,8 +162,7 @@ const questions: Question[] = [
     id: "5.1",
     section: "5) SPAZIO",
     type: "radio",
-    question:
-      "5.1 Spazio di lavoro e manovra adeguato per ruotare/assumere posture",
+    question: "5.1 Spazio di lavoro e manovra adeguato per ruotare/assumere posture",
     options: ["SI", "NO"],
   },
   {
@@ -364,8 +313,7 @@ const questions: Question[] = [
     id: "10.1",
     section: "10) INTERFACCIA UOMO-MACCHINA",
     type: "radio",
-    question:
-      "Il software presente è di facile utilizzo e adeguato al lavoro svolto",
+    question: "Il software presente è di facile utilizzo e adeguato al lavoro svolto",
     options: ["SI", "NO"],
   },
   {
@@ -383,13 +331,7 @@ const questions: Question[] = [
   },
 ] as const;
 
-const SECTORS = [
-  "Sicurezza",
-  "Ambiente",
-  "Formazione",
-  "Medicina del Lavoro",
-  "Altro",
-];
+const SECTORS = ["Sicurezza", "Ambiente", "Formazione", "Medicina del Lavoro", "Altro"];
 
 const CompileQuestionnaire: React.FC = () => {
   const { user, userProfile } = useAuth();
@@ -411,18 +353,12 @@ const CompileQuestionnaire: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
 
   useEffect(() => {
-    console.log(
-      "🔄 [CompileQuestionnaire] useEffect attivato con userProfile:",
-      userProfile
-    );
+    console.log("🔄 [CompileQuestionnaire] useEffect attivato con userProfile:", userProfile);
 
     const savedData = localStorage.getItem("selectedCompanyData");
 
     if (savedData) {
-      console.log(
-        "💾 [CompileQuestionnaire] Dati trovati in localStorage:",
-        savedData
-      );
+      console.log("💾 [CompileQuestionnaire] Dati trovati in localStorage:", savedData);
 
       try {
         const parsed = JSON.parse(savedData);
@@ -433,26 +369,17 @@ const CompileQuestionnaire: React.FC = () => {
         setSiteName(siteName?.name || siteName || "N/D");
         setShowSelectDialog(false);
       } catch (err) {
-        console.error(
-          "❌ [CompileQuestionnaire] Errore nel parsing di selectedCompanyData:",
-          err
-        );
+        console.error("❌ [CompileQuestionnaire] Errore nel parsing di selectedCompanyData:", err);
         checkAndLoadCompanyData();
       }
     } else {
-      console.warn(
-        "⚠️ [CompileQuestionnaire] Nessun dato in localStorage, uso fallback."
-      );
+      console.warn("⚠️ [CompileQuestionnaire] Nessun dato in localStorage, uso fallback.");
       checkAndLoadCompanyData();
     }
   }, [userProfile]);
 
   const checkAndLoadCompanyData = async () => {
-    if (
-      userProfile?.companyIds &&
-      userProfile.companyIds.length === 1 &&
-      userProfile?.siteIds?.length === 1
-    ) {
+    if (userProfile?.companyIds && userProfile.companyIds.length === 1 && userProfile?.siteIds?.length === 1) {
       const companyId = userProfile.companyIds[0];
       const siteId = userProfile.siteIds[0];
       setSelectedCompanyId(companyId);
@@ -478,9 +405,7 @@ const CompileQuestionnaire: React.FC = () => {
           id: d.id,
           ...d.data(),
         })) as Company[];
-        companiesData = allCompanies.filter((c) =>
-          userProfile.companyIds!.includes(c.id)
-        );
+        companiesData = allCompanies.filter((c) => userProfile.companyIds!.includes(c.id));
       }
 
       if (userProfile.siteIds && userProfile.siteIds.length > 0) {
@@ -497,9 +422,7 @@ const CompileQuestionnaire: React.FC = () => {
           id: d.id,
           ...d.data(),
         })) as CompanySite[];
-        sitesData = allSites.filter((s) =>
-          userProfile.companyIds!.includes(s.companyId)
-        );
+        sitesData = allSites.filter((s) => userProfile.companyIds!.includes(s.companyId));
         sitesData = sitesSnap.docs.map((d) => ({
           id: d.id,
           ...d.data(),
@@ -563,12 +486,7 @@ const CompileQuestionnaire: React.FC = () => {
   const validateForm = (): boolean => {
     for (const q of questions) {
       const isTextField = q.type === "text" || q.type === "textarea";
-      const mustCheck =
-        !isTextField ||
-        q.id === "meta_nome" ||
-        q.id === "foto_postazione" ||
-        q.id === "meta_postazione" ||
-        q.id === "meta_reparto";
+      const mustCheck = !isTextField || q.id === "meta_nome" || q.id === "foto_postazione" || q.id === "meta_postazione" || q.id === "meta_reparto";
 
       if (mustCheck && !answers[q.id]) {
         toast({
@@ -602,10 +520,7 @@ const CompileQuestionnaire: React.FC = () => {
   const handleSubmitConfirmed = async () => {
     setSubmitting(true);
     try {
-      const completeAnswers: Record<
-        string,
-        string | string[] | boolean | null
-      > = {};
+      const completeAnswers: Record<string, string | string[] | boolean | null> = {};
 
       for (const q of questions) {
         const val = answers[q.id];
@@ -613,11 +528,7 @@ const CompileQuestionnaire: React.FC = () => {
         if (val instanceof File) {
           console.warn(`Ignoro File non convertito per la domanda ${q.id}`);
           completeAnswers[q.id] = null;
-        } else if (
-          typeof val === "object" &&
-          val !== null &&
-          "base64" in (val as any)
-        ) {
+        } else if (typeof val === "object" && val !== null && "base64" in (val as any)) {
           completeAnswers[q.id] = (val as any).base64;
         } else if (Array.isArray(val)) {
           completeAnswers[q.id] = val.map((v) => String(v));
@@ -651,10 +562,7 @@ const CompileQuestionnaire: React.FC = () => {
           canvas.width = width;
           canvas.height = height;
           ctx.drawImage(img, 0, 0, width, height);
-          completeAnswers["foto_postazione"] = canvas.toDataURL(
-            "image/jpeg",
-            0.7
-          );
+          completeAnswers["foto_postazione"] = canvas.toDataURL("image/jpeg", 0.7);
         }
       }
 
@@ -698,17 +606,11 @@ const CompileQuestionnaire: React.FC = () => {
   const isSectionComplete = (sectionKey: string) => {
     return sections[sectionKey].every((q) => {
       const isTextField = q.type === "text" || q.type === "textarea";
-      const mustCheck =
-        !isTextField ||
-        q.id === "meta_nome" ||
-        q.id === "foto_postazione" ||
-        q.id === "meta_postazione" ||
-        q.id === "meta_reparto";
+      const mustCheck = !isTextField || q.id === "meta_nome" || q.id === "foto_postazione" || q.id === "meta_postazione" || q.id === "meta_reparto";
       if (!mustCheck) return true;
 
       const val = answers[q.id];
-      if (q.type === "checkbox-multi")
-        return Array.isArray(val) && val.length > 0;
+      if (q.type === "checkbox-multi") return Array.isArray(val) && val.length > 0;
       return val !== undefined && val !== "";
     });
   };
@@ -723,22 +625,15 @@ const CompileQuestionnaire: React.FC = () => {
                 <Send className="h-6 w-6 text-white" />
               </div>
             </div>
-            <h1 className="text-xl font-bold leading-tight">
-              Compilazione Checklist VDT
-            </h1>
+            <h1 className="text-xl font-bold leading-tight">Compilazione Checklist VDT</h1>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/dashboard")}
-            className="gap-2 w-full sm:w-auto"
-          >
+          <Button variant="outline" onClick={() => navigate("/dashboard")} className="gap-2 w-full sm:w-auto">
             <ArrowLeft className="h-4 w-4" /> Dashboard
           </Button>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-5xl space-y-6">
-        {/* Info Azienda e Sede */}
         {selectedCompanyId && selectedSiteId && (
           <Alert className="bg-gradient-to-r from-primary/5 to-accent/5 border-2 border-primary/20">
             <AlertDescription>
@@ -746,16 +641,12 @@ const CompileQuestionnaire: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-primary" />
                   <span className="font-semibold">Azienda:</span>
-                  <span className="text-muted-foreground">
-                    {companyName || "Caricamento..."}
-                  </span>
+                  <span className="text-muted-foreground">{companyName || "Caricamento..."}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-primary" />
                   <span className="font-semibold">Sede:</span>
-                  <span className="text-muted-foreground">
-                    {siteName || "Caricamento..."}
-                  </span>
+                  <span className="text-muted-foreground">{siteName || "Caricamento..."}</span>
                 </div>
               </div>
             </AlertDescription>
@@ -782,13 +673,8 @@ const CompileQuestionnaire: React.FC = () => {
 
         <Card className="shadow-xl border-2">
           <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
-            <CardTitle className="text-2xl">
-              POSTAZIONE DI LAVORO CON VIDEOTERMINALE
-            </CardTitle>
-            <CardDescription className="text-base">
-              Check list di valutazione della conformità - Compila tutti i campi
-              richiesti
-            </CardDescription>
+            <CardTitle className="text-2xl">POSTAZIONE DI LAVORO CON VIDEOTERMINALE</CardTitle>
+            <CardDescription className="text-base">Check list di valutazione della conformità - Compila tutti i campi richiesti</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePreview} className="space-y-6">
@@ -798,25 +684,16 @@ const CompileQuestionnaire: React.FC = () => {
                     key={sectionKey}
                     value={sectionKey}
                     className={`border-2 rounded-xl overflow-hidden transition-colors ${
-                      isSectionComplete(sectionKey)
-                        ? "border-green-500 bg-green-50"
-                        : "border-primary/20 bg-white"
+                      isSectionComplete(sectionKey) ? "border-green-500 bg-green-50" : "border-primary/20 bg-white"
                     }`}
                   >
                     <AccordionTrigger className="px-4 py-3 text-lg font-semibold w-full flex items-center justify-between border-b-0">
                       <span className="text-left">{sectionKey}</span>
-                      {isSectionComplete(sectionKey) && (
-                        <span className="text-green-600 text-sm font-medium ml-auto">
-                          ✅
-                        </span>
-                      )}
+                      {isSectionComplete(sectionKey) && <span className="text-green-600 text-sm font-medium ml-auto">✅</span>}
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 p-4">
                       {sections[sectionKey].map((q) => (
-                        <div
-                          key={q.id}
-                          className="p-4 border-2 rounded-lg bg-card hover:border-primary/30 transition-colors shadow-sm"
-                        >
+                        <div key={q.id} className="p-4 border-2 rounded-lg bg-card hover:border-primary/30 transition-colors shadow-sm">
                           <Label className="font-semibold">{q.question}</Label>
 
                           {q.type === "text" && (
@@ -832,8 +709,7 @@ const CompileQuestionnaire: React.FC = () => {
                                       if (!file) return;
                                       const reader = new FileReader();
                                       reader.onload = (ev) => {
-                                        const base64 = ev.target
-                                          ?.result as string;
+                                        const base64 = ev.target?.result as string;
                                         setValue(q.id, base64);
                                       };
                                       reader.readAsDataURL(file);
@@ -850,13 +726,7 @@ const CompileQuestionnaire: React.FC = () => {
                                   )}
                                 </div>
                               ) : (
-                                <Input
-                                  value={(answers[q.id] as string) || ""}
-                                  onChange={(e) =>
-                                    setValue(q.id, e.target.value)
-                                  }
-                                  className="mt-2"
-                                />
+                                <Input value={(answers[q.id] as string) || ""} onChange={(e) => setValue(q.id, e.target.value)} className="mt-2" />
                               )}
                             </>
                           )}
@@ -868,11 +738,7 @@ const CompileQuestionnaire: React.FC = () => {
                                   type="button"
                                   key={opt}
                                   onClick={() => setValue(q.id, opt)}
-                                  className={`px-3 py-1 rounded border ${
-                                    answers[q.id] === opt
-                                      ? "bg-indigo-600 text-white"
-                                      : "bg-white"
-                                  }`}
+                                  className={`px-3 py-1 rounded border ${answers[q.id] === opt ? "bg-indigo-600 text-white" : "bg-white"}`}
                                 >
                                   {opt}
                                 </button>
@@ -881,24 +747,11 @@ const CompileQuestionnaire: React.FC = () => {
                           )}
 
                           {q.type === "radio" && q.options && (
-                            <RadioGroup
-                              value={(answers[q.id] as string) || ""}
-                              onValueChange={(v) => setValue(q.id, v)}
-                              className="mt-2 space-y-2"
-                            >
+                            <RadioGroup value={(answers[q.id] as string) || ""} onValueChange={(v) => setValue(q.id, v)} className="mt-2 space-y-2">
                               {q.options.map((opt) => (
-                                <div
-                                  key={opt}
-                                  className="flex items-center space-x-2"
-                                >
-                                  <RadioGroupItem
-                                    value={opt}
-                                    id={`${q.id}-${opt}`}
-                                  />
-                                  <Label
-                                    htmlFor={`${q.id}-${opt}`}
-                                    className="cursor-pointer"
-                                  >
+                                <div key={opt} className="flex items-center space-x-2">
+                                  <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
+                                  <Label htmlFor={`${q.id}-${opt}`} className="cursor-pointer">
                                     {opt}
                                   </Label>
                                 </div>
@@ -909,24 +762,11 @@ const CompileQuestionnaire: React.FC = () => {
                           {q.type === "checkbox-multi" && q.options && (
                             <div className="mt-2 space-y-2">
                               {q.options.map((opt) => {
-                                const checked = (
-                                  (answers[q.id] as string[]) || []
-                                ).includes(opt);
+                                const checked = ((answers[q.id] as string[]) || []).includes(opt);
                                 return (
-                                  <div
-                                    key={opt}
-                                    className="flex items-center space-x-2"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      onChange={() => toggleMulti(q.id, opt)}
-                                      id={`${q.id}-${opt}`}
-                                    />
-                                    <Label
-                                      htmlFor={`${q.id}-${opt}`}
-                                      className="cursor-pointer"
-                                    >
+                                  <div key={opt} className="flex items-center space-x-2">
+                                    <input type="checkbox" checked={checked} onChange={() => toggleMulti(q.id, opt)} id={`${q.id}-${opt}`} />
+                                    <Label htmlFor={`${q.id}-${opt}`} className="cursor-pointer">
                                       {opt}
                                     </Label>
                                   </div>
@@ -951,13 +791,7 @@ const CompileQuestionnaire: React.FC = () => {
               </Accordion>
 
               <div className="flex gap-3 pt-4">
-                <Button
-                  type="submit"
-                  variant="gradient"
-                  className="flex-1"
-                  size="lg"
-                  disabled={submitting}
-                >
+                <Button type="submit" variant="gradient" className="flex-1" size="lg" disabled={submitting}>
                   <Send className="mr-2 h-5 w-5" />
                   {submitting ? "Invio in corso..." : "Invia Questionario"}
                 </Button>
@@ -990,9 +824,7 @@ const CompileQuestionnaire: React.FC = () => {
           <div className="space-y-4">
             {Object.keys(sections).map((sectionKey) => (
               <div key={sectionKey}>
-                <h4 className="font-bold text-primary mt-4 mb-2">
-                  {sectionKey}
-                </h4>
+                <h4 className="font-bold text-primary mt-4 mb-2">{sectionKey}</h4>
                 <div className="space-y-2">
                   {sections[sectionKey].map((q) => (
                     <div key={q.id} className="space-y-1">
@@ -1002,17 +834,11 @@ const CompileQuestionnaire: React.FC = () => {
 
                       {q.id === "foto_postazione" && answers[q.id] ? (
                         <div className="mt-2">
-                          <img
-                            src={answers[q.id] as string}
-                            alt="Foto postazione"
-                            className="w-64 h-64 object-cover rounded-lg border shadow-sm"
-                          />
+                          <img src={answers[q.id] as string} alt="Foto postazione" className="w-64 h-64 object-cover rounded-lg border shadow-sm" />
                         </div>
                       ) : (
                         <p className="text-muted-foreground text-sm break-words">
-                          {Array.isArray(answers[q.id])
-                            ? (answers[q.id] as string[]).join(", ") || "—"
-                            : answers[q.id] || "—"}
+                          {Array.isArray(answers[q.id]) ? (answers[q.id] as string[]).join(", ") || "—" : answers[q.id] || "—"}
                         </p>
                       )}
                     </div>
@@ -1038,10 +864,7 @@ const CompileQuestionnaire: React.FC = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Seleziona Azienda e Sede</DialogTitle>
-            <DialogDescription>
-              Prima di compilare il questionario, specifica per quale azienda e
-              sede stai lavorando.
-            </DialogDescription>
+            <DialogDescription>Prima di compilare il questionario, specifica per quale azienda e sede stai lavorando.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -1068,19 +891,9 @@ const CompileQuestionnaire: React.FC = () => {
 
             <div className="space-y-2">
               <Label htmlFor="site">Sede</Label>
-              <Select
-                value={selectedSiteId}
-                onValueChange={setSelectedSiteId}
-                disabled={!selectedCompanyId}
-              >
+              <Select value={selectedSiteId} onValueChange={setSelectedSiteId} disabled={!selectedCompanyId}>
                 <SelectTrigger id="site">
-                  <SelectValue
-                    placeholder={
-                      selectedCompanyId
-                        ? "Seleziona sede..."
-                        : "Prima seleziona un'azienda"
-                    }
-                  />
+                  <SelectValue placeholder={selectedCompanyId ? "Seleziona sede..." : "Prima seleziona un'azienda"} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredSites.map((s) => (
@@ -1093,11 +906,7 @@ const CompileQuestionnaire: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              onClick={handleConfirmSelection}
-              disabled={!selectedCompanyId || !selectedSiteId || loadingData}
-              className="w-full"
-            >
+            <Button onClick={handleConfirmSelection} disabled={!selectedCompanyId || !selectedSiteId || loadingData} className="w-full">
               Conferma e Procedi
             </Button>
           </DialogFooter>

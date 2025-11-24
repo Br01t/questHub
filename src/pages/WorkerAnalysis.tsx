@@ -1,25 +1,8 @@
 import { useState, useMemo } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Check, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -37,9 +20,18 @@ type ResponseDoc = {
   siteId?: string | null;
 };
 
+interface UserProfile {
+  uid?: string;
+  displayName?: string;
+  email?: string;
+  roles?: string[];
+  companyId?: string;
+  siteId?: string;
+}
+
 interface WorkerAnalysisProps {
   filteredResponses: ResponseDoc[];
-  userProfile: any;
+  userProfile: UserProfile | null;
   isSuperAdmin: boolean;
   availableCompanies: { id: string; name: string }[];
   availableSites: { id: string; name: string; companyId: string }[];
@@ -126,13 +118,7 @@ export default function WorkerAnalysis({
 
   const workers = useMemo(
     () =>
-      Array.from(
-        new Set(
-          filteredResponses
-            .map((r) => String(r.answers?.meta_nome))
-            .filter((n) => n && n !== "undefined" && n !== "null")
-        )
-      ).sort(),
+      Array.from(new Set(filteredResponses.map((r) => String(r.answers?.meta_nome)).filter((n) => n && n !== "undefined" && n !== "null"))).sort(),
     [filteredResponses]
   );
 
@@ -140,18 +126,10 @@ export default function WorkerAnalysis({
     if (selectedWorker === "all") return [];
     return filteredResponses
       .filter((r) => r.answers?.meta_nome === selectedWorker)
-      .sort(
-        (a, b) =>
-          (a.createdAt?.toDate()?.getTime() || 0) -
-          (b.createdAt?.toDate()?.getTime() || 0)
-      );
+      .sort((a, b) => (a.createdAt?.toDate()?.getTime() || 0) - (b.createdAt?.toDate()?.getTime() || 0));
   }, [filteredResponses, selectedWorker]);
 
-  const dates = responsesByWorker.map((r) =>
-    r.createdAt?.toDate()
-      ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm")
-      : "N/D"
-  );
+  const dates = responsesByWorker.map((r) => (r.createdAt?.toDate() ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm") : "N/D"));
 
   const renderAnswer = (val: AnswerValue) => {
     if (val === undefined || val === null || val === "") return "—";
@@ -161,11 +139,7 @@ export default function WorkerAnalysis({
     if (str.startsWith("data:image/") || str.startsWith("http")) {
       return (
         <a href={str} target="_blank" rel="noopener noreferrer">
-          <img
-            src={str}
-            alt="foto postazione"
-            className="w-20 h-20 object-cover rounded-md mx-auto shadow-sm hover:scale-105 transition-transform"
-          />
+          <img src={str} alt="foto postazione" className="w-20 h-20 object-cover rounded-md mx-auto shadow-sm hover:scale-105 transition-transform" />
         </a>
       );
     }
@@ -177,25 +151,21 @@ export default function WorkerAnalysis({
     if (val === undefined || val === null || val === "") return "—";
     if (Array.isArray(val)) return val.join(", ");
     const str = String(val);
-    
+
     if (str.startsWith("data:image/") || str.startsWith("http")) {
       return "[Immagine]";
     }
     return str;
   };
 
-  const isTextQuestion = (id: string): boolean =>
-    id.includes("_note") || id.startsWith("meta_") || id === "foto_postazione";
+  const isTextQuestion = (id: string): boolean => id.includes("_note") || id.startsWith("meta_") || id === "foto_postazione";
 
   const hasDifferentAnswers = (questionId: string): boolean => {
     if (isTextQuestion(questionId)) return false;
-    const values = responsesByWorker.map((r) =>
-      renderAnswer(r.answers?.[questionId])
-    );
+    const values = responsesByWorker.map((r) => renderAnswer(r.answers?.[questionId]));
     return new Set(values).size > 1;
   };
 
-  // 🔹 Esporta PDF strutturato a sezioni
   const generatePDF = () => {
     if (selectedWorker === "all" || responsesByWorker.length === 0) return;
 
@@ -225,10 +195,7 @@ export default function WorkerAnalysis({
       "10.1": "10) SOFTWARE",
     };
 
-    // 🔹 Ogni riga del body conterrà anche un "questionId" per riferimento
-    type RowCell =
-      | string
-      | { content: string; colSpan?: number; styles?: Record<string, unknown> };
+    type RowCell = string | { content: string; colSpan?: number; styles?: Record<string, unknown> };
     const body: {
       row: RowCell[];
       questionId?: string;
@@ -237,9 +204,7 @@ export default function WorkerAnalysis({
     let currentSection = "";
 
     FULL_QUESTIONS.forEach((q) => {
-      const sectionTitle = Object.entries(SECTION_TITLES).find(
-        ([id]) => q.id === id
-      )?.[1];
+      const sectionTitle = Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
       if (sectionTitle && sectionTitle !== currentSection) {
         currentSection = sectionTitle;
         body.push({
@@ -258,9 +223,7 @@ export default function WorkerAnalysis({
         });
       }
 
-      const answers = responsesByWorker.map((r) =>
-        renderAnswerForPDF(r.answers?.[q.id])
-      );
+      const answers = responsesByWorker.map((r) => renderAnswerForPDF(r.answers?.[q.id]));
       body.push({ row: [q.label, ...answers], questionId: q.id });
     });
 
@@ -274,26 +237,20 @@ export default function WorkerAnalysis({
         const rowMeta = body[data.row.index];
         if (!rowMeta) return;
 
-        // 🔸 Intestazioni di sezione → grigio chiaro fisso
         if (rowMeta.isSectionHeader) {
           data.cell.styles.fillColor = [230, 230, 230];
           data.cell.styles.fontStyle = "bold";
           return;
         }
 
-        // 🔸 Evidenziazione differenze solo per domande reali
-        if (
-          rowMeta.questionId &&
-          hasDifferentAnswers(rowMeta.questionId) &&
-          data.section === "body"
-        ) {
+        if (rowMeta.questionId && hasDifferentAnswers(rowMeta.questionId) && data.section === "body") {
           data.cell.styles.fillColor = [255, 255, 180];
         }
       },
     });
 
-    // 🔹 Aggiungi eventuale immagine alla fine del PDF
-    const lastY = (doc as any).lastAutoTable.finalY + 10;
+    type DocWithAutoTable = { lastAutoTable?: { finalY?: number } };
+    const lastY = ((doc as unknown as DocWithAutoTable).lastAutoTable?.finalY ?? 0) + 10;
     const lastResponse = responsesByWorker[responsesByWorker.length - 1];
     const foto = lastResponse?.answers?.["foto_postazione"];
 
@@ -309,14 +266,8 @@ export default function WorkerAnalysis({
     }
 
     doc.setFontSize(8);
-    doc.text(
-      `Generato il ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
-      marginLeft,
-      290
-    );
-    doc.save(
-      `report_${selectedWorker}_${new Date().toISOString().slice(0, 10)}.pdf`
-    );
+    doc.text(`Generato il ${format(new Date(), "dd/MM/yyyy HH:mm")}`, marginLeft, 290);
+    doc.save(`report_${selectedWorker}_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
@@ -362,16 +313,11 @@ export default function WorkerAnalysis({
 
         {/* Pulsanti */}
         <div className="flex gap-2">
-          <Button
-            variant="default"
-            className="gap-2"
-            onClick={generatePDF}
-            disabled={selectedWorker === "all"}
-          >
+          <Button variant="default" className="gap-2" onClick={generatePDF} disabled={selectedWorker === "all"}>
             <BarChart3 className="h-4 w-4" />
             Esporta PDF
           </Button>
-          
+
           <Button
             variant="outline"
             className="gap-2"
@@ -390,18 +336,12 @@ export default function WorkerAnalysis({
         </div>
       </div>
 
-      {/* Selettore lavoratore */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-accent/5 rounded-lg border">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Search className="h-5 w-5 text-primary shrink-0" />
           <Popover open={openWorker} onOpenChange={setOpenWorker}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openWorker}
-                className="w-full sm:w-[300px] justify-between"
-              >
+              <Button variant="outline" role="combobox" aria-expanded={openWorker} className="w-full sm:w-[300px] justify-between">
                 {selectedWorker === "all" ? "Cerca..." : selectedWorker}
                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -419,12 +359,7 @@ export default function WorkerAnalysis({
                         setOpenWorker(false);
                       }}
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedWorker === "all" ? "opacity-100" : "opacity-0"
-                        )}
-                      />
+                      <Check className={cn("mr-2 h-4 w-4", selectedWorker === "all" ? "opacity-100" : "opacity-0")} />
                       Tutti
                     </CommandItem>
                     {workers.map((w) => (
@@ -436,12 +371,7 @@ export default function WorkerAnalysis({
                           setOpenWorker(false);
                         }}
                       >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedWorker === w ? "opacity-100" : "opacity-0"
-                          )}
-                        />
+                        <Check className={cn("mr-2 h-4 w-4", selectedWorker === w ? "opacity-100" : "opacity-0")} />
                         {w}
                       </CommandItem>
                     ))}
@@ -453,7 +383,6 @@ export default function WorkerAnalysis({
         </div>
       </div>
 
-      {/* Tabella comparativa */}
       {selectedWorker === "all" ? (
         <Card className="shadow-md">
           <CardContent className="py-12 text-center text-muted-foreground">
@@ -464,22 +393,16 @@ export default function WorkerAnalysis({
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
             <CardTitle>{selectedWorker}</CardTitle>
-            <CardDescription>
-              Confronto questionari: {dates.join(", ")}
-            </CardDescription>
+            <CardDescription>Confronto questionari: {dates.join(", ")}</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 overflow-x-auto">
             <table className="min-w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-accent/30 border-b">
-                  <th className="text-left p-2 border-r font-semibold w-1/3">
-                    Domande
-                  </th>
+                  <th className="text-left p-2 border-r font-semibold w-1/3">Domande</th>
                   {dates.map((d) => (
-                    <th
-                      key={d}
-                      className="text-center p-2 border-r font-semibold"
-                    >Data: 
+                    <th key={d} className="text-center p-2 border-r font-semibold">
+                      Data:
                       {d}
                     </th>
                   ))}
@@ -505,20 +428,12 @@ export default function WorkerAnalysis({
                   const rows: JSX.Element[] = [];
 
                   FULL_QUESTIONS.forEach((q) => {
-                    const sectionTitle = Object.entries(SECTION_TITLES).find(
-                      ([id]) => q.id === id
-                    )?.[1];
+                    const sectionTitle = Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
                     if (sectionTitle && sectionTitle !== currentSection) {
                       currentSection = sectionTitle;
                       rows.push(
-                        <tr
-                          key={`section-${currentSection}`}
-                          className="bg-gray-200 text-left border-t-4 border-gray-300"
-                        >
-                          <td
-                            colSpan={responsesByWorker.length + 1}
-                            className="p-2 font-semibold text-gray-800 uppercase tracking-wide"
-                          >
+                        <tr key={`section-${currentSection}`} className="bg-gray-200 text-left border-t-4 border-gray-300">
+                          <td colSpan={responsesByWorker.length + 1} className="p-2 font-semibold text-gray-800 uppercase tracking-wide">
                             {currentSection}
                           </td>
                         </tr>
@@ -527,21 +442,10 @@ export default function WorkerAnalysis({
 
                     const changed = hasDifferentAnswers(q.id);
                     rows.push(
-                      <tr
-                        key={q.id}
-                        className={cn(
-                          "border-b hover:bg-accent/10",
-                          changed ? "bg-yellow-100/70" : ""
-                        )}
-                      >
-                        <td className="p-2 border-r align-top font-medium">
-                          {q.label}
-                        </td>
+                      <tr key={q.id} className={cn("border-b hover:bg-accent/10", changed ? "bg-yellow-100/70" : "")}>
+                        <td className="p-2 border-r align-top font-medium">{q.label}</td>
                         {responsesByWorker.map((resp) => (
-                          <td
-                            key={resp.id + q.id}
-                            className="p-2 text-center border-r align-top"
-                          >
+                          <td key={resp.id + q.id} className="p-2 text-center border-r align-top">
                             {renderAnswer(resp.answers?.[q.id])}
                           </td>
                         ))}

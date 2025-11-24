@@ -1,25 +1,8 @@
 import { useState, useMemo } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Check, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -273,9 +256,7 @@ export default function RepartoAnalysis({
   const [openReparto, setOpenReparto] = useState(false);
 
   const reparti = useMemo(() => {
-    const repartiEstratti = filteredResponses
-      .map((r) => r.answers?.meta_reparto)
-      .filter(Boolean);
+    const repartiEstratti = filteredResponses.map((r) => r.answers?.meta_reparto).filter(Boolean);
 
     console.log("🧭 meta_reparto trovati nei dati:", repartiEstratti);
 
@@ -321,13 +302,7 @@ export default function RepartoAnalysis({
 
   const workers = useMemo(
     () =>
-      Array.from(
-        new Set(
-          responsesByReparto
-            .map((r) => String(r.answers?.meta_nome))
-            .filter((n) => n && n !== "undefined" && n !== "null")
-        )
-      ).sort(),
+      Array.from(new Set(responsesByReparto.map((r) => String(r.answers?.meta_nome)).filter((n) => n && n !== "undefined" && n !== "null"))).sort(),
     [responsesByReparto]
   );
 
@@ -385,11 +360,7 @@ export default function RepartoAnalysis({
 
       const answers = responsesByReparto.map((r) => {
         const val = r.answers?.[q.id];
-        if (
-          q.id === "foto_postazione" &&
-          typeof val === "string" &&
-          val.startsWith("data:image")
-        ) {
+        if (q.id === "foto_postazione" && typeof val === "string" && val.startsWith("data:image")) {
           return { content: "", styles: {} }; // Placeholder: jspdf-autotable non gestisce direttamente immagini base64, vedi sotto
         }
         return renderAnswer(val);
@@ -397,10 +368,7 @@ export default function RepartoAnalysis({
 
       if (answers.every((a) => a === "—")) return;
 
-      body.push([
-        { content: q.label, styles: { fontStyle: "bold", halign: "left" } },
-        ...answers,
-      ]);
+      body.push([{ content: q.label, styles: { fontStyle: "bold", halign: "left" } }, ...answers]);
     });
 
     autoTable(doc, {
@@ -425,17 +393,9 @@ export default function RepartoAnalysis({
 
     // Footer con data generazione
     doc.setFontSize(8);
-    doc.text(
-      `Generato il ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
-      marginLeft,
-      290
-    );
+    doc.text(`Generato il ${format(new Date(), "dd/MM/yyyy HH:mm")}`, marginLeft, 290);
 
-    doc.save(
-      `report_reparto_${selectedReparto}_${new Date()
-        .toISOString()
-        .slice(0, 10)}.pdf`
-    );
+    doc.save(`report_reparto_${selectedReparto}_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
@@ -481,12 +441,7 @@ export default function RepartoAnalysis({
         </div> */}
 
         {/* Pulsante export */}
-        <Button
-          variant="default"
-          className="gap-2"
-          onClick={generatePDF}
-          disabled={selectedReparto === "all"}
-        >
+        <Button variant="default" className="gap-2" onClick={generatePDF} disabled={selectedReparto === "all"}>
           <BarChart3 className="h-4 w-4" />
           Esporta PDF
         </Button>
@@ -498,12 +453,7 @@ export default function RepartoAnalysis({
           <Search className="h-5 w-5 text-primary shrink-0" />
           <Popover open={openReparto} onOpenChange={setOpenReparto}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openReparto}
-                className="w-full sm:w-[300px] justify-between"
-              >
+              <Button variant="outline" role="combobox" aria-expanded={openReparto} className="w-full sm:w-[300px] justify-between">
                 {selectedReparto === "all" ? "Cerca..." : selectedReparto}
                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -521,14 +471,7 @@ export default function RepartoAnalysis({
                         setOpenReparto(false);
                       }}
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedReparto === "all"
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
+                      <Check className={cn("mr-2 h-4 w-4", selectedReparto === "all" ? "opacity-100" : "opacity-0")} />
                       Tutti
                     </CommandItem>
                     {reparti.map((r) => (
@@ -540,14 +483,7 @@ export default function RepartoAnalysis({
                           setOpenReparto(false);
                         }}
                       >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedReparto === String(r)
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
+                        <Check className={cn("mr-2 h-4 w-4", selectedReparto === String(r) ? "opacity-100" : "opacity-0")} />
                         {String(r)}
                       </CommandItem>
                     ))}
@@ -562,51 +498,32 @@ export default function RepartoAnalysis({
       {/* Tabella comparativa */}
       {selectedReparto === "all" ? (
         <Card className="shadow-md">
-          <CardContent className="py-12 text-center text-muted-foreground">
-            Seleziona un reparto per visualizzare il report.
-          </CardContent>
+          <CardContent className="py-12 text-center text-muted-foreground">Seleziona un reparto per visualizzare il report.</CardContent>
         </Card>
       ) : (
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
             <CardTitle>{selectedReparto}</CardTitle>
-            <CardDescription>
-              Confronto risposte dei lavoratori nel reparto
-            </CardDescription>
+            <CardDescription>Confronto risposte dei lavoratori nel reparto</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 overflow-x-auto">
             <table className="min-w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-accent/30 border-b">
-                  <th className="text-left p-2 border-r font-semibold w-1/3">
-                    Domanda
-                  </th>
+                  <th className="text-left p-2 border-r font-semibold w-1/3">Domanda</th>
                   {workers.map((w) => {
-                    const response = responsesByReparto.find(
-                      (r) => r.answers?.meta_nome === w
-                    );
-                    console.log(
-                      "🧾 Trovata risposta per lavoratore",
-                      w,
-                      response
-                    );
+                    const response = responsesByReparto.find((r) => r.answers?.meta_nome === w);
+                    console.log("🧾 Trovata risposta per lavoratore", w, response);
                     const reparto = response?.answers?.meta_reparto;
                     const companyId = response?.companyId;
                     const siteId = response?.siteId;
 
-                    const companyName =
-                      companyId &&
-                      availableCompanies.find((c) => c.id === companyId)?.name;
+                    const companyName = companyId && availableCompanies.find((c) => c.id === companyId)?.name;
 
-                    const siteName =
-                      siteId &&
-                      availableSites.find((s) => s.id === siteId)?.name;
+                    const siteName = siteId && availableSites.find((s) => s.id === siteId)?.name;
 
                     return (
-                      <th
-                        key={w}
-                        className="text-center p-2 border-r font-semibold"
-                      >
+                      <th key={w} className="text-center p-2 border-r font-semibold">
                         {w}
                         {companyName ? ` - ${companyName}` : ""}
                         {siteName ? ` (${siteName})` : ""}
@@ -620,20 +537,12 @@ export default function RepartoAnalysis({
                   let currentSection = "";
                   const rows: JSX.Element[] = [];
                   FULL_QUESTIONS.forEach((q) => {
-                    const sectionTitle = Object.entries(SECTION_TITLES).find(
-                      ([id]) => q.id === id
-                    )?.[1];
+                    const sectionTitle = Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
                     if (sectionTitle && sectionTitle !== currentSection) {
                       currentSection = sectionTitle;
                       rows.push(
-                        <tr
-                          key={`section-${currentSection}`}
-                          className="bg-gray-200 text-left border-t-4 border-gray-300"
-                        >
-                          <td
-                            colSpan={workers.length + 1}
-                            className="p-2 font-semibold text-gray-800 uppercase tracking-wide"
-                          >
+                        <tr key={`section-${currentSection}`} className="bg-gray-200 text-left border-t-4 border-gray-300">
+                          <td colSpan={workers.length + 1} className="p-2 font-semibold text-gray-800 uppercase tracking-wide">
                             {currentSection}
                           </td>
                         </tr>
@@ -643,18 +552,8 @@ export default function RepartoAnalysis({
                     const answers = responsesByReparto.map((r) => {
                       const val = r.answers?.[q.id];
 
-                      if (
-                        q.id === "foto_postazione" &&
-                        typeof val === "string" &&
-                        val.startsWith("data:image")
-                      ) {
-                        return (
-                          <img
-                            src={val}
-                            alt={`Foto ${r.answers?.meta_nome || ""}`}
-                            className="mx-auto h-16 w-16 object-cover rounded"
-                          />
-                        );
+                      if (q.id === "foto_postazione" && typeof val === "string" && val.startsWith("data:image")) {
+                        return <img src={val} alt={`Foto ${r.answers?.meta_nome || ""}`} className="mx-auto h-16 w-16 object-cover rounded" />;
                       }
 
                       return renderAnswer(val);
@@ -664,14 +563,9 @@ export default function RepartoAnalysis({
 
                     rows.push(
                       <tr key={q.id} className="border-b hover:bg-accent/10">
-                        <td className="p-2 border-r align-top font-medium">
-                          {q.label}
-                        </td>
+                        <td className="p-2 border-r align-top font-medium">{q.label}</td>
                         {answers.map((a, idx) => (
-                          <td
-                            key={idx + q.id}
-                            className="p-2 text-center border-r align-top"
-                          >
+                          <td key={idx + q.id} className="p-2 text-center border-r align-top">
                             {a}
                           </td>
                         ))}

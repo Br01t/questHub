@@ -14,19 +14,23 @@ const CookiePolicy = () => {
 
       <h2 className="text-xl font-semibold mt-6 mb-2">Tipi di cookie utilizzati</h2>
       <ul className="list-disc ml-6 mb-4">
-        <li><strong>Cookie tecnici:</strong> necessari al corretto funzionamento del sito.</li>
-        <li><strong>Cookie analitici:</strong> per raccogliere dati anonimi sulle visite.</li>
-        <li><strong>Cookie di profilazione:</strong> opzionali, utilizzati solo con consenso esplicito.</li>
+        <li>
+          <strong>Cookie tecnici:</strong> necessari al corretto funzionamento del sito.
+        </li>
+        <li>
+          <strong>Cookie analitici:</strong> per raccogliere dati anonimi sulle visite.
+        </li>
+        <li>
+          <strong>Cookie di profilazione:</strong> opzionali, utilizzati solo con consenso esplicito.
+        </li>
       </ul>
 
       <h2 className="text-xl font-semibold mt-6 mb-2">Gestione dei cookie</h2>
-      <p className="mb-4">
-        Puoi modificare le tue preferenze sui cookie attraverso le impostazioni del browser o rifiutare il loro utilizzo.
-      </p>
+      <p className="mb-4">Puoi modificare le tue preferenze sui cookie attraverso le impostazioni del browser o rifiutare il loro utilizzo.</p>
 
       <div className="mt-8">
         <Button
-          variant="outline" // usa "gradient" se preferisci più evidenza
+          variant="outline"
           onClick={() => navigate("/")}
           className="gap-2 flex items-center"
         >
