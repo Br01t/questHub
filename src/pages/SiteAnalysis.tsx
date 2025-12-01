@@ -281,7 +281,7 @@ export default function SiteAnalysis({
       },
       didParseCell: (data) => {
         // Riga sezione con colSpan
-        if (data.cell.raw?.colSpan) {
+        if (typeof data.cell.raw === 'object' && data.cell.raw && 'colSpan' in data.cell.raw) {
           data.cell.styles.fillColor = [229, 231, 235];
           data.cell.styles.fontStyle = "bold";
         }

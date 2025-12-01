@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuestionnaire } from "@/contexts/QuestionnaireContext";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface Response {
@@ -86,6 +87,7 @@ interface CompanySite {
 
 const Dashboard = () => {
   const { user, userProfile, isSuperAdmin, logout } = useAuth();
+  const { questionnaires, selectedQuestionnaire, setSelectedQuestionnaireId, loading: questionnaireLoading } = useQuestionnaire();
   const navigate = useNavigate();
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,6 +99,7 @@ const Dashboard = () => {
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [openCompany, setOpenCompany] = useState(false);
   const [openSite, setOpenSite] = useState(false);
+  const [openQuestionnaire, setOpenQuestionnaire] = useState(false);
 
   const ALL_COMPANIES_ID = "__ALL_COMPANIES__";
   const ALL_SITES_ID = "__ALL_SITES__";
@@ -472,6 +475,49 @@ const Dashboard = () => {
                               >
                                 <Check className={cn("mr-2 h-4 w-4", selectedSiteId === site.id ? "opacity-100" : "opacity-0")} />
                                 {site.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
+
+                {/* Selettore Questionario */}
+                {questionnaires.length > 0 && (
+                  <Popover open={openQuestionnaire} onOpenChange={setOpenQuestionnaire}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background">
+                        <div className="flex items-center gap-1.5">
+                          <ClipboardList className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {selectedQuestionnaire?.name || "Seleziona questionario"}
+                          </span>
+                        </div>
+                        <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[280px] p-0 bg-background z-50" align="start">
+                      <Command>
+                        <CommandInput placeholder="Cerca questionario..." />
+                        <CommandList>
+                          <CommandEmpty>Nessun questionario trovato.</CommandEmpty>
+                          <CommandGroup>
+                            {questionnaires.map((q) => (
+                              <CommandItem
+                                key={q.id}
+                                value={q.id}
+                                onSelect={() => {
+                                  setSelectedQuestionnaireId(q.id);
+                                  setOpenQuestionnaire(false);
+                                }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", selectedQuestionnaire?.id === q.id ? "opacity-100" : "opacity-0")} />
+                                <div className="flex flex-col">
+                                  <span>{q.name}</span>
+                                  <span className="text-xs text-muted-foreground">{q.sector} • {q.questions.length} domande</span>
+                                </div>
                               </CommandItem>
                             ))}
                           </CommandGroup>

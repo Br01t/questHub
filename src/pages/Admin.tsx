@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Shield, Building2, MapPin, ArrowLeft, Plus, Trash2, Users as UsersIcon } from "lucide-react";
+import { Shield, Building2, MapPin, ArrowLeft, Plus, Trash2, Users as UsersIcon, FileText } from "lucide-react";
 import { Company, CompanySite, UserProfile } from "@/types/user";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import QuestionnaireManager from "./QuestionnaireManager";
 
 const Admin = () => {
   const { user, isSuperAdmin } = useAuth();
@@ -306,10 +307,11 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="companies">Aziende</TabsTrigger>
             <TabsTrigger value="sites">Sedi</TabsTrigger>
             <TabsTrigger value="users">Utenti</TabsTrigger>
+            <TabsTrigger value="questionnaires">Questionari</TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies" className="space-y-6">
@@ -699,6 +701,10 @@ const Admin = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="questionnaires">
+            <QuestionnaireManager />
           </TabsContent>
         </Tabs>
       </main>

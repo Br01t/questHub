@@ -17,6 +17,8 @@ type ResponseDoc = {
   answers?: Record<string, AnswerValue>;
   userEmail?: string | null;
   userId?: string | null;
+  companyIds?: string[];
+  siteIds?: string[];
 };
 
 // ✅ Domande ufficiali (aggiornate da checklist)
@@ -384,7 +386,7 @@ export default function RepartoAnalysis({
       },
       didParseCell: (data) => {
         // Righe sezione con background grigio
-        if (data.cell.raw?.colSpan) {
+        if (typeof data.cell.raw === 'object' && data.cell.raw && 'colSpan' in data.cell.raw) {
           data.cell.styles.fillColor = [230, 230, 230];
           data.cell.styles.fontStyle = "bold";
         }
@@ -515,8 +517,8 @@ export default function RepartoAnalysis({
                     const response = responsesByReparto.find((r) => r.answers?.meta_nome === w);
                     console.log("🧾 Trovata risposta per lavoratore", w, response);
                     const reparto = response?.answers?.meta_reparto;
-                    const companyId = response?.companyId;
-                    const siteId = response?.siteId;
+                    const companyId = response?.companyIds?.[0];
+                    const siteId = response?.siteIds?.[0];
 
                     const companyName = companyId && availableCompanies.find((c) => c.id === companyId)?.name;
 
