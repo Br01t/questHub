@@ -491,9 +491,7 @@ const Dashboard = () => {
                       <Button variant="outline" size="sm" className="w-full sm:w-auto justify-between gap-2 bg-background/50 hover:bg-background">
                         <div className="flex items-center gap-1.5">
                           <ClipboardList className="h-3.5 w-3.5" />
-                          <span className="text-xs">
-                            {selectedQuestionnaire?.name || "Seleziona questionario"}
-                          </span>
+                          <span className="text-xs">{selectedQuestionnaire?.name || "Seleziona questionario"}</span>
                         </div>
                         <ChevronDown className="h-3.5 w-3.5 opacity-50" />
                       </Button>
@@ -516,7 +514,9 @@ const Dashboard = () => {
                                 <Check className={cn("mr-2 h-4 w-4", selectedQuestionnaire?.id === q.id ? "opacity-100" : "opacity-0")} />
                                 <div className="flex flex-col">
                                   <span>{q.name}</span>
-                                  <span className="text-xs text-muted-foreground">{q.sector} • {q.questions.length} domande</span>
+                                  <span className="text-xs text-muted-foreground group-aria-selected:text-white">
+                                    {q.sector} • {q.questions.length} domande
+                                  </span>
                                 </div>
                               </CommandItem>
                             ))}
@@ -613,8 +613,14 @@ const Dashboard = () => {
                 <CardDescription className="text-xs font-medium uppercase tracking-wide">Questionari Attivi</CardDescription>
                 <FileText className="h-5 w-5 text-accent/50" />
               </div>
-              <CardTitle className="text-4xl font-bold text-accent">1</CardTitle>
-              <p className="text-xs text-muted-foreground">Attualmente disponibile</p>
+              <CardTitle className="text-4xl font-bold text-accent">{questionnaires.length}</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {questionnaires.length === 0
+                  ? "Nessun questionario disponibile"
+                  : questionnaires.length === 1
+                  ? "Attualmente disponibile"
+                  : "Attualmente disponibili"}
+              </p>
             </CardHeader>
           </Card>
         </div>

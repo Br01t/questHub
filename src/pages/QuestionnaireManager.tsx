@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Trash2, Edit, Save, X } from "lucide-react";
+import { Plus, Trash2, Edit, Save, X, Copy } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
@@ -127,10 +127,12 @@ export default function QuestionnaireManager() {
   };
 
   const addQuestion = () => {
+    const defaultSection = formQuestions.length > 0 ? formQuestions[0].section : "";
+
     const newQuestion: Question = {
       id: `q_${Date.now()}`,
       label: "",
-      section: "",
+      section: defaultSection,
       type: "text",
       required: true,
     };
@@ -163,6 +165,27 @@ export default function QuestionnaireManager() {
     setFormQuestions(updated);
   };
 
+  const duplicateQuestionnaire = async (q: Questionnaire) => {
+    if (!user) return;
+
+    try {
+      const data = {
+        ...q,
+        name: q.name + " (Copia)",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: user.uid,
+      };
+      delete data.id;
+      await addDoc(collection(db, "questionnaires"), data);
+      toast.success("Questionario duplicato");
+      await loadQuestionnaires();
+    } catch (error) {
+      console.error("Errore nella duplicazione:", error);
+      toast.error("Errore nella duplicazione del questionario");
+    }
+  };
+
   const deleteOption = (questionIndex: number, optionIndex: number) => {
     const updated = [...formQuestions];
     if (updated[questionIndex].options) {
@@ -180,9 +203,7 @@ export default function QuestionnaireManager() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Gestione Questionari</h1>
-          <p className="text-muted-foreground mt-1">
-            Crea e modifica i questionari per la valutazione
-          </p>
+          <p className="text-muted-foreground mt-1">Crea e modifica i questionari per la valutazione</p>
         </div>
         {!isCreating && (
           <Button onClick={startCreating}>
@@ -196,34 +217,20 @@ export default function QuestionnaireManager() {
         <Card className="border-primary">
           <CardHeader>
             <CardTitle>{editingId ? "Modifica Questionario" : "Nuovo Questionario"}</CardTitle>
-            <CardDescription>
-              Inserisci i dettagli del questionario e le domande
-            </CardDescription>
+            <CardDescription>Inserisci i dettagli del questionario e le domande</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Dati base */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome Questionario *</Label>
-                <Input
-                  id="name"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="es. Valutazione Uffici 2025"
-                />
+                <Label htmlFor="name">Titolo Questionario *</Label>
+                <Input id="name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="es. Valutazione Uffici 2025" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sector">Settore *</Label>
-                <Input
-                  id="sector"
-                  value={formSector}
-                  onChange={(e) => setFormSector(e.target.value)}
-                  placeholder="es. Uffici, Produzione, ecc."
-                />
+                <Label htmlFor="sector">Tipologia *</Label>
+                <Input id="sector" value={formSector} onChange={(e) => setFormSector(e.target.value)} placeholder="es. Sicurezza, Formazione, ecc." />
               </div>
             </div>
 
-            {/* Lista domande */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-lg font-semibold">Domande</Label>
@@ -246,19 +253,16 @@ export default function QuestionnaireManager() {
                       <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>ID Domanda</Label>
+                            <Label>Sezione</Label>
                             <Input
-                              value={q.id}
-                              onChange={(e) => updateQuestion(index, "id", e.target.value)}
-                              placeholder="es. meta_nome"
+                              value={q.section}
+                              onChange={(e) => updateQuestion(index, "section", e.target.value)}
+                              placeholder="es. Intestazione, Illuminazione, ecc."
                             />
                           </div>
                           <div className="space-y-2">
                             <Label>Tipo</Label>
-                            <Select
-                              value={q.type}
-                              onValueChange={(value) => updateQuestion(index, "type", value as QuestionType)}
-                            >
+                            <Select value={q.type} onValueChange={(value) => updateQuestion(index, "type", value as QuestionType)}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
@@ -282,16 +286,6 @@ export default function QuestionnaireManager() {
                           />
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>Sezione</Label>
-                          <Input
-                            value={q.section}
-                            onChange={(e) => updateQuestion(index, "section", e.target.value)}
-                            placeholder="es. Intestazione, Illuminazione, ecc."
-                          />
-                        </div>
-
-                        {/* Opzioni per risposta multipla */}
                         {q.type === "multiple" && (
                           <div className="space-y-2">
                             <Label>Opzioni di risposta</Label>
@@ -303,20 +297,12 @@ export default function QuestionnaireManager() {
                                     onChange={(e) => updateOption(index, optIdx, e.target.value)}
                                     placeholder={`Opzione ${optIdx + 1}`}
                                   />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => deleteOption(index, optIdx)}
-                                  >
+                                  <Button variant="ghost" size="icon" onClick={() => deleteOption(index, optIdx)}>
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               ))}
-                              <Button
-                                onClick={() => addOption(index)}
-                                variant="outline"
-                                size="sm"
-                              >
+                              <Button onClick={() => addOption(index)} variant="outline" size="sm">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Aggiungi Opzione
                               </Button>
@@ -324,7 +310,6 @@ export default function QuestionnaireManager() {
                           </div>
                         )}
 
-                        {/* Configurazione scala */}
                         {q.type === "scale" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -357,11 +342,7 @@ export default function QuestionnaireManager() {
                         )}
 
                         <div className="flex justify-end">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteQuestion(index)}
-                          >
+                          <Button variant="destructive" size="sm" onClick={() => deleteQuestion(index)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Elimina Domanda
                           </Button>
@@ -373,7 +354,6 @@ export default function QuestionnaireManager() {
               </Accordion>
             </div>
 
-            {/* Azioni */}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={cancelEditing}>
                 <X className="mr-2 h-4 w-4" />
@@ -388,7 +368,6 @@ export default function QuestionnaireManager() {
         </Card>
       )}
 
-      {/* Lista questionari esistenti */}
       {!isCreating && (
         <div className="grid gap-4">
           {questionnaires.map((q) => (
@@ -398,27 +377,24 @@ export default function QuestionnaireManager() {
                   <div>
                     <CardTitle>{q.name}</CardTitle>
                     <CardDescription>
-                      Settore: {q.sector} • {q.questions.length} domande
+                      Settore: {q.sector} • {q.questions?.length || 0} domande
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => startEditing(q)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteQuestionnaire(q.id)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => duplicateQuestionnaire(q)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => deleteQuestionnaire(q.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  Creato il {q.createdAt.toLocaleDateString()}
-                </div>
+                <div className="text-sm text-muted-foreground">Creato il {q.createdAt.toLocaleDateString()}</div>
               </CardContent>
             </Card>
           ))}

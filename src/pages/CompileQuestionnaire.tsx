@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Building2, MapPin } from "lucide-react";
+import { ArrowLeft, Send, Building2, MapPin, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,306 +32,19 @@ type CompanySite = {
 type Question = {
   id: string;
   section: string;
-  type: "text" | "select" | "radio" | "checkbox-multi" | "textarea";
-  question: string;
+  type: "text" | "textarea" | "multiple" | "scale" | "checkbox";
+  label: string;
   options?: string[];
+  scale?: { min: number; max: number };
+  required?: boolean;
 };
 
-const questions: Question[] = [
-  {
-    id: "meta_nome",
-    section: "Intestazione",
-    type: "text",
-    question: "Nome del valutato (lavoratore o reparto)",
-  },
-  {
-    id: "meta_postazione",
-    section: "Intestazione",
-    type: "text",
-    question: "Postazione n.",
-  },
-  {
-    id: "meta_reparto",
-    section: "Intestazione",
-    type: "text",
-    question: "Ufficio / Reparto",
-  },
-
-  {
-    id: "1.1",
-    section: "1) ORGANIZZAZIONE DEL LAVORO",
-    type: "select",
-    question: "1.1 Ore di lavoro settimanali a VDT (abituali)",
-    options: ["<20", ">20"],
-  },
-  {
-    id: "1.2",
-    section: "1) ORGANIZZAZIONE DEL LAVORO",
-    type: "radio",
-    question: "1.2 La mansione prevede pause/cambi attività di 15 minuti ogni 120 minuti di applicazione continuativa al VDT",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "1.3",
-    section: "1) ORGANIZZAZIONE DEL LAVORO",
-    type: "checkbox-multi",
-    question: "1.3 Tipo di lavoro prevalente",
-    options: ["inserimento dati", "acquisizione dati", "videoscrittura", "programmazione"],
-  },
-  {
-    id: "1.4",
-    section: "1) ORGANIZZAZIONE DEL LAVORO",
-    type: "radio",
-    question: "1.4 È stata effettuata informazione al lavoratore per il corretto uso del VDT",
-    options: ["SI", "NO"],
-  },
-
-  {
-    id: "2.1",
-    section: "2) MICROCLIMA",
-    type: "radio",
-    question: "2.1 Modalità per il ricambio d'aria dell'ambiente",
-    options: ["naturale", "artificiale"],
-  },
-  {
-    id: "2.2",
-    section: "2) MICROCLIMA",
-    type: "radio",
-    question: "2.2 Possibilità di regolare la temperatura dell'ambiente",
-    options: ["presente", "non presente"],
-  },
-  {
-    id: "2.3",
-    section: "2) MICROCLIMA",
-    type: "radio",
-    question: "2.3 Possibilità di regolare l'umidità dell'ambiente",
-    options: ["presente", "non presente"],
-  },
-  {
-    id: "2.4",
-    section: "2) MICROCLIMA",
-    type: "radio",
-    question: "2.4 Le attrezzature in dotazione producono eccesso di calore che comporta discomfort termico",
-    options: ["SI", "NO"],
-  },
-
-  {
-    id: "3.1",
-    section: "3) ILLUMINAZIONE",
-    type: "radio",
-    question: "Tipo di luce",
-    options: ["naturale", "artificiale", "mista"],
-  },
-  {
-    id: "3.2_nat",
-    section: "3) ILLUMINAZIONE",
-    type: "radio",
-    question: "Per regolazione luce naturale",
-    options: ["dispositivo copertura regolabile", "copertura non regolabile", "nessun dispositivo"],
-  },
-  {
-    id: "3.2_art",
-    section: "3) ILLUMINAZIONE",
-    type: "radio",
-    question: "Per regolazione luce artificiale",
-    options: ["variatori di luminosità", "accensione a isole", "accensione centralizzata"],
-  },
-  {
-    id: "3.3",
-    section: "3) ILLUMINAZIONE",
-    type: "radio",
-    question: "Posizione della postazione rispetto alla sorgente di luce naturale",
-    options: ["perpendicolare", "frontale", "di spalle"],
-  },
-
-  {
-    id: "4.1",
-    section: "4) RUMORE AMBIENTALE",
-    type: "text",
-    question: "4.1 Eventuale misura (dB(A))",
-  },
-  {
-    id: "4.2",
-    section: "4) RUMORE AMBIENTALE",
-    type: "radio",
-    question: "4.2 Può disturbare l'attenzione e la comunicazione verbale",
-    options: ["SI", "NO"],
-  },
-
-  {
-    id: "5.1",
-    section: "5) SPAZIO",
-    type: "radio",
-    question: "5.1 Spazio di lavoro e manovra adeguato per ruotare/assumere posture",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "5.2",
-    section: "5) SPAZIO",
-    type: "radio",
-    question: "5.2 Percorsi liberi dagli ostacoli",
-    options: ["SI", "NO"],
-  },
-
-  {
-    id: "6.1",
-    section: "6) PIANO DI LAVORO",
-    type: "radio",
-    question: "Superficie adeguata (poco ingombrante)",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "6.2",
-    section: "6) PIANO DI LAVORO",
-    type: "radio",
-    question: "Altezza del piano compresa indicativamente tra 70-80 cm",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "6.3",
-    section: "6) PIANO DI LAVORO",
-    type: "radio",
-    question: "Dimensioni e disposizione di schermo, tastiera, mouse adeguate",
-    options: ["SI", "NO"],
-  },
-
-  {
-    id: "7.1",
-    section: "7) SEDILE DI LAVORO",
-    type: "radio",
-    question: "Altezza sedile regolabile",
-    options: ["SI", "NO", "NON PRESENTE"],
-  },
-  {
-    id: "7.2",
-    section: "7) SEDILE DI LAVORO",
-    type: "radio",
-    question: "Inclinazione sedile regolabile",
-    options: ["SI", "NO", "NON PRESENTE"],
-  },
-  {
-    id: "7.3",
-    section: "7) SEDILE DI LAVORO",
-    type: "radio",
-    question: "Schienale con supporto dorso-lombare",
-    options: ["SI", "NO", "NON PRESENTE"],
-  },
-  {
-    id: "7.4",
-    section: "7) SEDILE DI LAVORO",
-    type: "radio",
-    question: "Schienale regolabile in altezza",
-    options: ["SI", "NO", "NON PRESENTE"],
-  },
-  {
-    id: "7.5",
-    section: "7) SEDILE DI LAVORO",
-    type: "radio",
-    question: "Schienale e seduta con bordi smussati e materiali appropriati",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "7.6",
-    section: "7) SEDILE DI LAVORO",
-    type: "radio",
-    question: "Presenza di ruote/meccanismo spostamento (se previsto)",
-    options: ["SI", "NO"],
-  },
-
-  {
-    id: "8.1",
-    section: "8) SCHERMO VIDEO",
-    type: "radio",
-    question: "Monitor VDT orientabile/inclinabile",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "8.2",
-    section: "8) SCHERMO VIDEO",
-    type: "radio",
-    question: "Immagine stabile ed esente da sfarfallamento",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "8.3",
-    section: "8) SCHERMO VIDEO",
-    type: "radio",
-    question: "Risoluzione e luminosità del carattere regolabili",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "8.4",
-    section: "8) SCHERMO VIDEO",
-    type: "radio",
-    question: "Contrasto e luminosità adeguati",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "8.5",
-    section: "8) SCHERMO VIDEO",
-    type: "radio",
-    question: "Presenza di riflessi o riverberi sullo schermo",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "8.6",
-    section: "8) SCHERMO VIDEO",
-    type: "text",
-    question: "Note su posizione dello schermo (altezza occhi, distanza, ecc.)",
-  },
-
-  {
-    id: "9.1",
-    section: "9) TASTIERA",
-    type: "radio",
-    question: "Tastiera e mouse separati dallo schermo",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "9.2",
-    section: "9) TASTIERA",
-    type: "radio",
-    question: "Tastiera inclinabile",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "9.3",
-    section: "9) TASTIERA",
-    type: "radio",
-    question: "Spazio adeguato per appoggiare avambracci davanti alla tastiera",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "9.4",
-    section: "9) TASTIERA",
-    type: "radio",
-    question: "Simboli/tasti leggibili dalla normale posizione",
-    options: ["SI", "NO"],
-  },
-
-  {
-    id: "10.1",
-    section: "10) INTERFACCIA UOMO-MACCHINA",
-    type: "radio",
-    question: "Il software presente è di facile utilizzo e adeguato al lavoro svolto",
-    options: ["SI", "NO"],
-  },
-  {
-    id: "10_2",
-    section: "10) INTERFACCIA UOMO-MACCHINA",
-    type: "text",
-    question: "Osservazioni (eventuali)",
-  },
-
-  {
-    id: "foto_postazione",
-    section: "Fine",
-    type: "text",
-    question: "Foto della postazione (URL o nota)",
-  },
-] as const;
-
-const SECTORS = ["Sicurezza", "Ambiente", "Formazione", "Medicina del Lavoro", "Altro"];
+type Questionnaire = {
+  id: string;
+  name: string;
+  sector: string;
+  questions: Question[];
+};
 
 const CompileQuestionnaire: React.FC = () => {
   const { user, userProfile } = useAuth();
@@ -343,7 +56,6 @@ const CompileQuestionnaire: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [companyName, setCompanyName] = useState<string>("");
   const [siteName, setSiteName] = useState<string>("");
-  const [selectedSector, setSelectedSector] = useState<string>(SECTORS[0]);
 
   const [showSelectDialog, setShowSelectDialog] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -352,14 +64,20 @@ const CompileQuestionnaire: React.FC = () => {
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [loadingData, setLoadingData] = useState(false);
 
-  useEffect(() => {
-    console.log("🔄 [CompileQuestionnaire] useEffect attivato con userProfile:", userProfile);
+  // Nuovi stati per gestione questionari
+  const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
+  const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string>("");
+  const [currentQuestionnaire, setCurrentQuestionnaire] = useState<Questionnaire | null>(null);
+  const [loadingQuestionnaires, setLoadingQuestionnaires] = useState(true);
 
+  useEffect(() => {
+    loadQuestionnaires();
+  }, []);
+
+  useEffect(() => {
     const savedData = localStorage.getItem("selectedCompanyData");
 
     if (savedData) {
-      console.log("💾 [CompileQuestionnaire] Dati trovati in localStorage:", savedData);
-
       try {
         const parsed = JSON.parse(savedData);
         const { companyId, companyName, siteId, siteName } = parsed;
@@ -369,14 +87,46 @@ const CompileQuestionnaire: React.FC = () => {
         setSiteName(siteName?.name || siteName || "N/D");
         setShowSelectDialog(false);
       } catch (err) {
-        console.error("❌ [CompileQuestionnaire] Errore nel parsing di selectedCompanyData:", err);
+        console.error("Errore parsing localStorage:", err);
         checkAndLoadCompanyData();
       }
     } else {
-      console.warn("⚠️ [CompileQuestionnaire] Nessun dato in localStorage, uso fallback.");
       checkAndLoadCompanyData();
     }
   }, [userProfile]);
+
+  const loadQuestionnaires = async () => {
+    try {
+      const snap = await getDocs(collection(db, "questionnaires"));
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as Questionnaire[];
+      setQuestionnaires(data);
+    } catch (error) {
+      console.error("Errore caricamento questionari:", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile caricare i questionari disponibili",
+      });
+    } finally {
+      setLoadingQuestionnaires(false);
+    }
+  };
+
+  const handleQuestionnaireSelect = (questionnaireId: string) => {
+    const selected = questionnaires.find((q) => q.id === questionnaireId);
+    if (selected) {
+      setSelectedQuestionnaireId(questionnaireId);
+      setCurrentQuestionnaire(selected);
+      setAnswers({});
+      toast({
+        title: "Questionario selezionato",
+        description: `Hai selezionato: ${selected.name}`,
+      });
+    }
+  };
 
   const checkAndLoadCompanyData = async () => {
     if (userProfile?.companyIds && userProfile.companyIds.length === 1 && userProfile?.siteIds?.length === 1) {
@@ -416,17 +166,12 @@ const CompileQuestionnaire: React.FC = () => {
         })) as CompanySite[];
         sitesData = allSites.filter((s) => userProfile.siteIds!.includes(s.id));
       } else if (userProfile.companyIds && userProfile.companyIds.length > 0) {
-        // fallback: tutte le sedi di quelle aziende
         const sitesSnap = await getDocs(collection(db, "companySites"));
         const allSites = sitesSnap.docs.map((d) => ({
           id: d.id,
           ...d.data(),
         })) as CompanySite[];
         sitesData = allSites.filter((s) => userProfile.companyIds!.includes(s.companyId));
-        sitesData = sitesSnap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as CompanySite[];
       }
 
       setCompanies(companiesData);
@@ -484,27 +229,24 @@ const CompileQuestionnaire: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    for (const q of questions) {
-      const isTextField = q.type === "text" || q.type === "textarea";
-      const mustCheck = !isTextField || q.id === "meta_nome" || q.id === "foto_postazione" || q.id === "meta_postazione" || q.id === "meta_reparto";
-
-      if (mustCheck && !answers[q.id]) {
-        toast({
-          variant: "destructive",
-          title: "Attenzione",
-          description: `Rispondi alla domanda: "${q.question}" nella sezione "${q.section}"`,
-        });
-        return false;
-      }
-    }
-
-    if (!selectedSector) {
+    if (!currentQuestionnaire) {
       toast({
         variant: "destructive",
         title: "Attenzione",
-        description: "Seleziona un settore prima di inviare il questionario",
+        description: "Seleziona un questionario prima di inviare",
       });
       return false;
+    }
+
+    for (const q of currentQuestionnaire.questions) {
+      if (q.required !== false && !answers[q.id]) {
+        toast({
+          variant: "destructive",
+          title: "Attenzione",
+          description: `Rispondi alla domanda: "${q.label}" nella sezione "${q.section}"`,
+        });
+        return false;
+      }
     }
 
     return true;
@@ -518,19 +260,15 @@ const CompileQuestionnaire: React.FC = () => {
   };
 
   const handleSubmitConfirmed = async () => {
+    if (!currentQuestionnaire) return;
+
     setSubmitting(true);
     try {
       const completeAnswers: Record<string, string | string[] | boolean | null> = {};
 
-      for (const q of questions) {
+      for (const q of currentQuestionnaire.questions) {
         const val = answers[q.id];
-
-        if (val instanceof File) {
-          console.warn(`Ignoro File non convertito per la domanda ${q.id}`);
-          completeAnswers[q.id] = null;
-        } else if (typeof val === "object" && val !== null && "base64" in (val as any)) {
-          completeAnswers[q.id] = (val as any).base64;
-        } else if (Array.isArray(val)) {
+        if (Array.isArray(val)) {
           completeAnswers[q.id] = val.map((v) => String(v));
         } else if (typeof val === "string" || typeof val === "boolean") {
           completeAnswers[q.id] = val;
@@ -539,48 +277,21 @@ const CompileQuestionnaire: React.FC = () => {
         }
       }
 
-      const foto = completeAnswers["foto_postazione"];
-      if (typeof foto === "string" && foto.startsWith("data:image/")) {
-        if (foto.length > 900_000) {
-          console.warn("Ridimensiono immagine base64 troppo grande");
-          const img = new Image();
-          img.src = foto;
-          await new Promise((res) => (img.onload = res));
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d")!;
-          const maxSize = 800;
-          let { width, height } = img;
-          if (width > height) {
-            if (width > maxSize) {
-              height *= maxSize / width;
-              width = maxSize;
-            }
-          } else if (height > maxSize) {
-            width *= maxSize / height;
-            height = maxSize;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-          completeAnswers["foto_postazione"] = canvas.toDataURL("image/jpeg", 0.7);
-        }
-      }
-
-      // Invio su Firestore
       await addDoc(collection(db, "responses"), {
         userId: user?.uid ?? null,
         userEmail: user?.email ?? null,
         companyId: selectedCompanyId,
         siteId: selectedSiteId,
-        sector: selectedSector,
-        formId: "checklist_vdt_v1",
+        questionnaireId: selectedQuestionnaireId,
+        questionnaireName: currentQuestionnaire.name,
+        sector: currentQuestionnaire.sector,
         answers: completeAnswers,
         createdAt: serverTimestamp(),
       });
 
       toast({
         title: "Questionario inviato!",
-        description: "Grazie per aver completato la checklist",
+        description: "Grazie per aver completato la compilazione",
       });
       localStorage.removeItem("selectedCompanyData");
       navigate("/dashboard");
@@ -597,23 +308,37 @@ const CompileQuestionnaire: React.FC = () => {
     }
   };
 
-  const sections: Record<string, Question[]> = {};
-  questions.forEach((q) => {
-    if (!sections[q.section]) sections[q.section] = [];
-    sections[q.section].push(q);
-  });
+  const groupQuestionsBySection = () => {
+    if (!currentQuestionnaire) return {};
+    const sections: Record<string, Question[]> = {};
+    currentQuestionnaire.questions.forEach((q) => {
+      if (!sections[q.section]) sections[q.section] = [];
+      sections[q.section].push(q);
+    });
+    return sections;
+  };
+
+  const sections = groupQuestionsBySection();
 
   const isSectionComplete = (sectionKey: string) => {
     return sections[sectionKey].every((q) => {
-      const isTextField = q.type === "text" || q.type === "textarea";
-      const mustCheck = !isTextField || q.id === "meta_nome" || q.id === "foto_postazione" || q.id === "meta_postazione" || q.id === "meta_reparto";
-      if (!mustCheck) return true;
-
+      if (q.required === false) return true;
       const val = answers[q.id];
-      if (q.type === "checkbox-multi") return Array.isArray(val) && val.length > 0;
+      if (q.type === "checkbox") return Array.isArray(val) && val.length > 0;
       return val !== undefined && val !== "";
     });
   };
+
+  if (loadingQuestionnaires) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Caricamento questionari...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
@@ -625,7 +350,7 @@ const CompileQuestionnaire: React.FC = () => {
                 <Send className="h-6 w-6 text-white" />
               </div>
             </div>
-            <h1 className="text-xl font-bold leading-tight">Compilazione Checklist VDT</h1>
+            <h1 className="text-xl font-bold leading-tight">Compilazione Questionario</h1>
           </div>
           <Button variant="outline" onClick={() => navigate("/dashboard")} className="gap-2 w-full sm:w-auto">
             <ArrowLeft className="h-4 w-4" /> Dashboard
@@ -653,168 +378,155 @@ const CompileQuestionnaire: React.FC = () => {
           </Alert>
         )}
 
+        {/* Selezione Questionario */}
         {selectedCompanyId && selectedSiteId && (
-          <div className="my-4">
-            <Label htmlFor="sector">Settore</Label>
-            <Select value={selectedSector} onValueChange={setSelectedSector}>
-              <SelectTrigger id="sector">
-                <SelectValue placeholder="Seleziona settore..." />
-              </SelectTrigger>
-              <SelectContent>
-                {SECTORS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Card className="shadow-lg border-2 border-primary/20">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Seleziona Questionario
+              </CardTitle>
+              <CardDescription>Scegli quale questionario compilare</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                <Label htmlFor="questionnaire">Questionario disponibile</Label>
+                <Select value={selectedQuestionnaireId} onValueChange={handleQuestionnaireSelect}>
+                  <SelectTrigger id="questionnaire">
+                    <SelectValue placeholder="Seleziona un questionario..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {questionnaires.map((q) => (
+                      <SelectItem key={q.id} value={q.id}>
+                        {q.name} - {q.sector} ({q.questions.length} domande)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <Card className="shadow-xl border-2">
-          <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
-            <CardTitle className="text-2xl">POSTAZIONE DI LAVORO CON VIDEOTERMINALE</CardTitle>
-            <CardDescription className="text-base">Check list di valutazione della conformità - Compila tutti i campi richiesti</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePreview} className="space-y-6">
-              <Accordion type="multiple" className="w-full">
-                {Object.keys(sections).map((sectionKey) => (
-                  <AccordionItem
-                    key={sectionKey}
-                    value={sectionKey}
-                    className={`border-2 rounded-xl overflow-hidden transition-colors ${
-                      isSectionComplete(sectionKey) ? "border-green-500 bg-green-50" : "border-primary/20 bg-white"
-                    }`}
-                  >
-                    <AccordionTrigger className="px-4 py-3 text-lg font-semibold w-full flex items-center justify-between border-b-0">
-                      <span className="text-left">{sectionKey}</span>
-                      {isSectionComplete(sectionKey) && <span className="text-green-600 text-sm font-medium ml-auto">✅</span>}
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4 p-4">
-                      {sections[sectionKey].map((q) => (
-                        <div key={q.id} className="p-4 border-2 rounded-lg bg-card hover:border-primary/30 transition-colors shadow-sm">
-                          <Label className="font-semibold">{q.question}</Label>
+        {/* Form Questionario */}
+        {currentQuestionnaire && (
+          <Card className="shadow-xl border-2">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
+              <CardTitle className="text-2xl">{currentQuestionnaire.name}</CardTitle>
+              <CardDescription className="text-base">
+                Settore: {currentQuestionnaire.sector} • Compila tutti i campi richiesti
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePreview} className="space-y-6">
+                <Accordion type="multiple" className="w-full">
+                  {Object.keys(sections).map((sectionKey) => (
+                    <AccordionItem
+                      key={sectionKey}
+                      value={sectionKey}
+                      className={`border-2 rounded-xl overflow-hidden transition-colors ${
+                        isSectionComplete(sectionKey) ? "border-green-500 bg-green-50" : "border-primary/20 bg-white"
+                      }`}
+                    >
+                      <AccordionTrigger className="px-4 py-3 text-lg font-semibold w-full flex items-center justify-between border-b-0">
+                        <span className="text-left">{sectionKey}</span>
+                        {isSectionComplete(sectionKey) && <span className="text-green-600 text-sm font-medium ml-auto">✅</span>}
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 p-4">
+                        {sections[sectionKey].map((q) => (
+                          <div key={q.id} className="p-4 border-2 rounded-lg bg-card hover:border-primary/30 transition-colors shadow-sm">
+                            <Label className="font-semibold">
+                              {q.label} {q.required !== false && <span className="text-destructive">*</span>}
+                            </Label>
 
-                          {q.type === "text" && (
-                            <>
-                              {q.id === "foto_postazione" ? (
-                                <div className="mt-2 space-y-2">
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (!file) return;
-                                      const reader = new FileReader();
-                                      reader.onload = (ev) => {
-                                        const base64 = ev.target?.result as string;
-                                        setValue(q.id, base64);
-                                      };
-                                      reader.readAsDataURL(file);
-                                    }}
-                                  />
-                                  {answers[q.id] && (
-                                    <div className="mt-3">
-                                      <img
-                                        src={answers[q.id] as string}
-                                        alt="Anteprima foto postazione"
-                                        className="w-48 h-48 object-cover rounded-lg border shadow-sm"
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <Input value={(answers[q.id] as string) || ""} onChange={(e) => setValue(q.id, e.target.value)} className="mt-2" />
-                              )}
-                            </>
-                          )}
+                            {q.type === "text" && (
+                              <Input value={(answers[q.id] as string) || ""} onChange={(e) => setValue(q.id, e.target.value)} className="mt-2" />
+                            )}
 
-                          {q.type === "select" && q.options && (
-                            <div className="mt-2 flex gap-2 flex-wrap">
-                              {q.options.map((opt) => (
-                                <button
-                                  type="button"
-                                  key={opt}
-                                  onClick={() => setValue(q.id, opt)}
-                                  className={`px-3 py-1 rounded border ${answers[q.id] === opt ? "bg-indigo-600 text-white" : "bg-white"}`}
-                                >
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          )}
+                            {q.type === "textarea" && (
+                              <Textarea
+                                value={(answers[q.id] as string) || ""}
+                                onChange={(e) => setValue(q.id, e.target.value)}
+                                rows={4}
+                                className="mt-2"
+                              />
+                            )}
 
-                          {q.type === "radio" && q.options && (
-                            <RadioGroup value={(answers[q.id] as string) || ""} onValueChange={(v) => setValue(q.id, v)} className="mt-2 space-y-2">
-                              {q.options.map((opt) => (
-                                <div key={opt} className="flex items-center space-x-2">
-                                  <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
-                                  <Label htmlFor={`${q.id}-${opt}`} className="cursor-pointer">
-                                    {opt}
-                                  </Label>
-                                </div>
-                              ))}
-                            </RadioGroup>
-                          )}
-
-                          {q.type === "checkbox-multi" && q.options && (
-                            <div className="mt-2 space-y-2">
-                              {q.options.map((opt) => {
-                                const checked = ((answers[q.id] as string[]) || []).includes(opt);
-                                return (
+                            {q.type === "multiple" && q.options && (
+                              <RadioGroup value={(answers[q.id] as string) || ""} onValueChange={(v) => setValue(q.id, v)} className="mt-2 space-y-2">
+                                {q.options.map((opt) => (
                                   <div key={opt} className="flex items-center space-x-2">
-                                    <input type="checkbox" checked={checked} onChange={() => toggleMulti(q.id, opt)} id={`${q.id}-${opt}`} />
+                                    <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
                                     <Label htmlFor={`${q.id}-${opt}`} className="cursor-pointer">
                                       {opt}
                                     </Label>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                                ))}
+                              </RadioGroup>
+                            )}
 
-                          {q.type === "textarea" && (
-                            <Textarea
-                              value={(answers[q.id] as string) || ""}
-                              onChange={(e) => setValue(q.id, e.target.value)}
-                              rows={4}
-                              className="mt-2"
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                            {q.type === "checkbox" && q.options && (
+                              <div className="mt-2 space-y-2">
+                                {q.options.map((opt) => {
+                                  const checked = ((answers[q.id] as string[]) || []).includes(opt);
+                                  return (
+                                    <div key={opt} className="flex items-center space-x-2">
+                                      <input type="checkbox" checked={checked} onChange={() => toggleMulti(q.id, opt)} id={`${q.id}-${opt}`} />
+                                      <Label htmlFor={`${q.id}-${opt}`} className="cursor-pointer">
+                                        {opt}
+                                      </Label>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
 
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" variant="gradient" className="flex-1" size="lg" disabled={submitting}>
-                  <Send className="mr-2 h-5 w-5" />
-                  {submitting ? "Invio in corso..." : "Invia Questionario"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  onClick={() => {
-                    setAnswers({});
-                    toast({
-                      title: "Form resettato",
-                      description: "Tutte le risposte sono state cancellate",
-                    });
-                  }}
-                >
-                  Reset
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                            {q.type === "scale" && q.scale && (
+                              <div className="mt-2">
+                                <Input
+                                  type="number"
+                                  min={q.scale.min}
+                                  max={q.scale.max}
+                                  value={(answers[q.id] as string) || ""}
+                                  onChange={(e) => setValue(q.id, e.target.value)}
+                                  placeholder={`Da ${q.scale.min} a ${q.scale.max}`}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+
+                <div className="flex gap-3 pt-4">
+                  <Button type="submit" variant="gradient" className="flex-1" size="lg" disabled={submitting}>
+                    <Send className="mr-2 h-5 w-5" />
+                    {submitting ? "Invio in corso..." : "Invia Questionario"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => {
+                      setAnswers({});
+                      toast({
+                        title: "Form resettato",
+                        description: "Tutte le risposte sono state cancellate",
+                      });
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
+      {/* Dialog Preview */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -828,19 +540,10 @@ const CompileQuestionnaire: React.FC = () => {
                 <div className="space-y-2">
                   {sections[sectionKey].map((q) => (
                     <div key={q.id} className="space-y-1">
-                      <p className="font-semibold">
-                        {q.id}. {q.question}
+                      <p className="font-semibold">{q.label}</p>
+                      <p className="text-muted-foreground text-sm break-words">
+                        {Array.isArray(answers[q.id]) ? (answers[q.id] as string[]).join(", ") || "—" : answers[q.id] || "—"}
                       </p>
-
-                      {q.id === "foto_postazione" && answers[q.id] ? (
-                        <div className="mt-2">
-                          <img src={answers[q.id] as string} alt="Foto postazione" className="w-64 h-64 object-cover rounded-lg border shadow-sm" />
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-sm break-words">
-                          {Array.isArray(answers[q.id]) ? (answers[q.id] as string[]).join(", ") || "—" : answers[q.id] || "—"}
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -873,7 +576,7 @@ const CompileQuestionnaire: React.FC = () => {
                 value={selectedCompanyId}
                 onValueChange={(value) => {
                   setSelectedCompanyId(value);
-                  setSelectedSiteId(""); // Reset sede quando cambia azienda
+                  setSelectedSiteId("");
                 }}
               >
                 <SelectTrigger id="company">
