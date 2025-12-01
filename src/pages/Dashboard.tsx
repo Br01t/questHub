@@ -390,7 +390,7 @@ const Dashboard = () => {
                     </PopoverTrigger>
                     <PopoverContent className="w-[240px] p-0 bg-background z-50" align="start">
                       <Command>
-                        <CommandInput placeholder="Cerca azienda..." />
+                        <CommandInput placeholder="Cerca azienda" />
                         <CommandList>
                           <CommandEmpty>Nessuna azienda trovata.</CommandEmpty>
                           <CommandGroup>
@@ -448,7 +448,7 @@ const Dashboard = () => {
                     </PopoverTrigger>
                     <PopoverContent className="w-[240px] p-0 bg-background z-50" align="start">
                       <Command>
-                        <CommandInput placeholder="Cerca sede..." />
+                        <CommandInput placeholder="Cerca sede" />
                         <CommandList>
                           <CommandEmpty>Nessuna sede trovata.</CommandEmpty>
                           <CommandGroup>
@@ -498,7 +498,7 @@ const Dashboard = () => {
                     </PopoverTrigger>
                     <PopoverContent className="w-[280px] p-0 bg-background z-50" align="start">
                       <Command>
-                        <CommandInput placeholder="Cerca questionario..." />
+                        <CommandInput placeholder="Cerca questionario" />
                         <CommandList>
                           <CommandEmpty>Nessun questionario trovato.</CommandEmpty>
                           <CommandGroup>
@@ -514,7 +514,7 @@ const Dashboard = () => {
                                 <Check className={cn("mr-2 h-4 w-4", selectedQuestionnaire?.id === q.id ? "opacity-100" : "opacity-0")} />
                                 <div className="flex flex-col">
                                   <span>{q.name}</span>
-                                  <span className="text-xs text-muted-foreground group-aria-selected:text-white">
+                                  <span className="text-xs group-aria-selected:text-white">
                                     {q.sector} • {q.questions.length} domande
                                   </span>
                                 </div>

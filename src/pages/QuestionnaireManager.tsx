@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -376,7 +376,7 @@ export default function QuestionnaireManager() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle>{q.name}</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="mt-2">
                       Settore: {q.sector} • {q.questions?.length || 0} domande
                     </CardDescription>
                   </div>
@@ -393,9 +393,9 @@ export default function QuestionnaireManager() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardFooter>
                 <div className="text-sm text-muted-foreground">Creato il {q.createdAt.toLocaleDateString()}</div>
-              </CardContent>
+              </CardFooter>
             </Card>
           ))}
         </div>

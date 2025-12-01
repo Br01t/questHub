@@ -393,7 +393,7 @@ const CompileQuestionnaire: React.FC = () => {
                 <Label htmlFor="questionnaire">Questionario disponibile</Label>
                 <Select value={selectedQuestionnaireId} onValueChange={handleQuestionnaireSelect}>
                   <SelectTrigger id="questionnaire">
-                    <SelectValue placeholder="Seleziona un questionario..." />
+                    <SelectValue placeholder="Seleziona un questionario" />
                   </SelectTrigger>
                   <SelectContent>
                     {questionnaires.map((q) => (
