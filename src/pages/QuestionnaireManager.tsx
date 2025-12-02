@@ -4,15 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Trash2, Edit, Save, X, Copy } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Edit, Save, X, Copy, Lock } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Questionnaire, Question, QuestionType } from "@/types/questionnaire";
+
+// Campi meta obbligatori per ogni questionario (non eliminabili)
+const META_QUESTIONS: Question[] = [
+  { id: "meta_nome", label: "Nome e Cognome Lavoratore", section: "Dati Identificativi", type: "text", required: true },
+  { id: "meta_reparto", label: "Reparto / Ufficio", section: "Dati Identificativi", type: "text", required: true },
+];
+
+const isMetaQuestion = (questionId: string) => META_QUESTIONS.some(mq => mq.id === questionId);
 
 export default function QuestionnaireManager() {
   const { user } = useAuth();
@@ -53,7 +60,8 @@ export default function QuestionnaireManager() {
   const startCreating = () => {
     setFormName("");
     setFormSector("");
-    setFormQuestions([]);
+    // Inizializza con i campi meta obbligatori
+    setFormQuestions([...META_QUESTIONS]);
     setEditingId(null);
     setIsCreating(true);
   };
@@ -146,6 +154,11 @@ export default function QuestionnaireManager() {
   };
 
   const deleteQuestion = (index: number) => {
+    const question = formQuestions[index];
+    if (isMetaQuestion(question.id)) {
+      toast.error("I campi identificativi non possono essere eliminati");
+      return;
+    }
     setFormQuestions(formQuestions.filter((_, i) => i !== index));
   };
 
@@ -241,12 +254,20 @@ export default function QuestionnaireManager() {
               </div>
 
               <Accordion type="single" collapsible className="w-full">
-                {formQuestions.map((q, index) => (
+                {formQuestions.map((q, index) => {
+                  const isMeta = isMetaQuestion(q.id);
+                  return (
                   <AccordionItem key={q.id} value={q.id}>
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center gap-2 text-left">
                         <span className="font-mono text-sm text-muted-foreground">#{index + 1}</span>
                         <span>{q.label || "Nuova domanda"}</span>
+                        {isMeta && (
+                          <Badge variant="secondary" className="gap-1 text-xs">
+                            <Lock className="h-3 w-3" />
+                            Obbligatorio
+                          </Badge>
+                        )}
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -341,16 +362,24 @@ export default function QuestionnaireManager() {
                           </div>
                         )}
 
-                        <div className="flex justify-end">
-                          <Button variant="destructive" size="sm" onClick={() => deleteQuestion(index)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Elimina Domanda
-                          </Button>
-                        </div>
+                        {!isMeta && (
+                          <div className="flex justify-end">
+                            <Button variant="destructive" size="sm" onClick={() => deleteQuestion(index)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Elimina Domanda
+                            </Button>
+                          </div>
+                        )}
+                        {isMeta && (
+                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                            Questo campo è obbligatorio per il filtraggio delle analisi e non può essere eliminato.
+                          </div>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-                ))}
+                  );
+                })}
               </Accordion>
             </div>
 
