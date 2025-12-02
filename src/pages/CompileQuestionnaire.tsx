@@ -129,6 +129,9 @@ const CompileQuestionnaire: React.FC = () => {
   };
 
   const checkAndLoadCompanyData = async () => {
+    // Carica sempre le aziende e sedi disponibili
+    await loadCompaniesAndSites();
+    
     if (userProfile?.companyIds && userProfile.companyIds.length === 1 && userProfile?.siteIds?.length === 1) {
       const companyId = userProfile.companyIds[0];
       const siteId = userProfile.siteIds[0];
@@ -136,7 +139,6 @@ const CompileQuestionnaire: React.FC = () => {
       setSelectedSiteId(siteId);
       await loadCompanyAndSite(companyId, siteId);
     } else {
-      await loadCompaniesAndSites();
       setShowSelectDialog(true);
     }
   };
@@ -144,34 +146,38 @@ const CompileQuestionnaire: React.FC = () => {
   const loadCompaniesAndSites = async () => {
     setLoadingData(true);
     try {
-      if (!userProfile) return;
-
       let companiesData: Company[] = [];
       let sitesData: CompanySite[] = [];
 
-      if (userProfile.companyIds && userProfile.companyIds.length > 0) {
-        const companiesSnap = await getDocs(collection(db, "companies"));
-        const allCompanies = companiesSnap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as Company[];
+      const companiesSnap = await getDocs(collection(db, "companies"));
+      const allCompanies = companiesSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as Company[];
+
+      const sitesSnap = await getDocs(collection(db, "companySites"));
+      const allSites = sitesSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as CompanySite[];
+
+      // Se userProfile ha companyIds, filtra le aziende
+      if (userProfile?.companyIds && userProfile.companyIds.length > 0) {
         companiesData = allCompanies.filter((c) => userProfile.companyIds!.includes(c.id));
+      } else {
+        // Altrimenti mostra tutte le aziende (per superAdmin o utenti senza restrizioni)
+        companiesData = allCompanies;
       }
 
-      if (userProfile.siteIds && userProfile.siteIds.length > 0) {
-        const sitesSnap = await getDocs(collection(db, "companySites"));
-        const allSites = sitesSnap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as CompanySite[];
+      // Se userProfile ha siteIds, filtra le sedi
+      if (userProfile?.siteIds && userProfile.siteIds.length > 0) {
         sitesData = allSites.filter((s) => userProfile.siteIds!.includes(s.id));
-      } else if (userProfile.companyIds && userProfile.companyIds.length > 0) {
-        const sitesSnap = await getDocs(collection(db, "companySites"));
-        const allSites = sitesSnap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as CompanySite[];
+      } else if (userProfile?.companyIds && userProfile.companyIds.length > 0) {
+        // Filtra le sedi per le aziende assegnate
         sitesData = allSites.filter((s) => userProfile.companyIds!.includes(s.companyId));
+      } else {
+        // Altrimenti mostra tutte le sedi
+        sitesData = allSites;
       }
 
       setCompanies(companiesData);

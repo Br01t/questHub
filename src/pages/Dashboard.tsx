@@ -28,53 +28,6 @@ import { doc, getDoc } from "firebase/firestore";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--destructive))", "#8884d8", "#82ca9d", "#ffc658"];
 
-const FULL_QUESTIONS: { id: string; label: string }[] = [
-  { id: "meta_nome", label: "Nome valutato / lavoratore" },
-  { id: "meta_postazione", label: "Postazione n." },
-  { id: "meta_reparto", label: "Ufficio / Reparto" },
-  { id: "1.1", label: "1.1 Ore di lavoro settimanali a VDT (abituali)" },
-  { id: "1.2", label: "1.2 Pause/cambi attività 15' ogni 120' (SI/NO)" },
-  { id: "1.3", label: "1.3 Tipo di lavoro prevalente" },
-  { id: "1.4", label: "1.4 Informazione al lavoratore per uso VDT (SI/NO)" },
-  { id: "2.1", label: "2.1 Modalità ricambio aria (naturale/artificiale)" },
-  { id: "2.2", label: "2.2 Possibilità di regolare la temperatura" },
-  { id: "2.3", label: "2.3 Possibilità di regolare l'umidità" },
-  { id: "2.4", label: "2.4 Eccesso di calore dalle attrezzature (SI/NO)" },
-  { id: "3.1", label: "3.1 Tipo di luce (naturale/artificiale/mista)" },
-  { id: "3.2_nat", label: "3.2 - Regolazione luce naturale" },
-  { id: "3.2_art", label: "3.2 - Regolazione luce artificiale" },
-  { id: "3.3", label: "3.3 Posizione rispetto alla sorgente naturale" },
-  { id: "4.1", label: "4.1 Eventuale misura rumore (dB(A))" },
-  { id: "4.2", label: "4.2 Disturbo attenzione/comunicazione (SI/NO)" },
-  { id: "5.1", label: "5.1 Spazio di lavoro/manovra adeguato (SI/NO)" },
-  { id: "5.2", label: "5.2 Percorsi liberi da ostacoli (SI/NO)" },
-  { id: "6.1", label: "6.1 Superficie del piano adeguata (SI/NO)" },
-  { id: "6.2", label: "6.2 Altezza del piano 70-80cm (SI/NO)" },
-  {
-    id: "6.3",
-    label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)",
-  },
-  { id: "7.1", label: "7.1 Altezza sedile regolabile" },
-  { id: "7.2", label: "7.2 Inclinazione sedile regolabile" },
-  { id: "7.3", label: "7.3 Schienale con supporto dorso-lombare" },
-  { id: "7.4", label: "7.4 Schienale regolabile in altezza" },
-  {
-    id: "7.5",
-    label: "7.5 Schienale/seduta bordi smussati/materiali appropriati",
-  },
-  { id: "7.6", label: "7.6 Presenza di ruote/meccanismo spostamento" },
-  { id: "8.1", label: "8.1 Monitor orientabile/inclinabile" },
-  { id: "8.2", label: "8.2 Immagine stabile, senza sfarfallio" },
-  { id: "8.3", label: "8.3 Risoluzione/luminosità regolabili" },
-  { id: "8.4", label: "8.4 Contrasto/luminosità adeguati" },
-  { id: "8.5", label: "8.5 Presenza di riflessi o riverberi" },
-  { id: "9.1", label: "9.1 Tastiera e mouse separati dallo schermo" },
-  { id: "9.2", label: "9.2 Tastiera inclinabile" },
-  { id: "9.3", label: "9.3 Spazio per appoggiare avambracci" },
-  { id: "9.4", label: "9.4 Simboli/tasti leggibili" },
-  { id: "10_note", label: "10 - Osservazioni (note)" },
-];
-
 interface Company {
   id: string;
   name: string;
@@ -266,10 +219,14 @@ const Dashboard = () => {
   }, [responses, selectedCompanyId, selectedSiteId, selectedQuestionnaire]);
 
   const groupedByQuestion = useMemo(() => {
+    // Usa le domande del questionario selezionato
+    const questions = selectedQuestionnaire?.questions || [];
+    if (questions.length === 0) return [];
+    
     const grouped: Record<string, Record<string, number>> = {};
     filteredResponses.forEach((r) => {
       const answers = r.answers || {};
-      FULL_QUESTIONS.forEach((q) => {
+      questions.forEach((q) => {
         const val = answers[q.id];
         if (!val) return;
         if (Array.isArray(val)) {
@@ -283,7 +240,7 @@ const Dashboard = () => {
         }
       });
     });
-    return FULL_QUESTIONS.map((q) => {
+    return questions.map((q) => {
       const counts = grouped[q.id] || {};
       const data = Object.entries(counts).map(([name, value]) => ({
         name,
@@ -296,7 +253,7 @@ const Dashboard = () => {
         data,
       };
     });
-  }, [filteredResponses]);
+  }, [filteredResponses, selectedQuestionnaire]);
 
   const { satisfactionData, averageScore } = useMemo(() => {
     if (filteredResponses.length === 0) return { satisfactionData: [], averageScore: 0 };
