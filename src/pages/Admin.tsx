@@ -36,6 +36,20 @@ const Admin = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const filteredUsers = users.filter((u) => u.email?.toLowerCase().includes(searchTerm.toLowerCase()));
+  const [companySearchTerm, setCompanySearchTerm] = useState("");
+  const [siteSearchTerm, setSiteSearchTerm] = useState("");
+  const filteredCompanies = companies.filter((company) => company.name?.toLowerCase().includes(companySearchTerm.toLowerCase()));
+  const filteredSites = sites.filter((site) => {
+    const company = companies.find((c) => c.id === site.companyId);
+    const companyName = company?.name || "";
+    const searchTermLower = siteSearchTerm.toLowerCase();
+
+    return (
+      site.name?.toLowerCase().includes(searchTermLower) ||
+      site.address?.toLowerCase().includes(searchTermLower) ||
+      companyName.toLowerCase().includes(searchTermLower)
+    );
+  });
 
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
@@ -338,17 +352,32 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
-
             <Card className="shadow-xl border-2">
               <CardHeader className="border-b">
-                <CardTitle>Aziende Esistenti ({companies.length})</CardTitle>
+                <CardTitle>Aziende Esistenti ({filteredCompanies.length})</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                {companies.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">Nessuna azienda creata</p>
+                <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:items-center">
+                  <Label htmlFor="search-company" className="text-sm font-medium">
+                    Cerca azienda
+                  </Label>
+                  <Input
+                    id="search-company"
+                    type="text"
+                    placeholder="Cerca per nome"
+                    value={companySearchTerm}
+                    onChange={(e) => setCompanySearchTerm(e.target.value)}
+                    className="sm:w-72 w-full"
+                  />
+                </div>
+
+                {filteredCompanies.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    {companySearchTerm ? "Nessuna azienda trovata con questo nome" : "Nessuna azienda creata"}
+                  </p>
                 ) : (
                   <div className="space-y-3">
-                    {companies.map((company) => {
+                    {filteredCompanies.map((company) => {
                       const companySites = sites.filter((s) => s.companyId === company.id);
                       return (
                         <div key={company.id} className="flex flex-col gap-2 p-4 border rounded-lg hover:bg-accent/5 transition-colors">
@@ -365,7 +394,6 @@ const Admin = () => {
                               Elimina
                             </Button>
                           </div>
-
                           {companySites.length > 0 && (
                             <ul className="ml-8 mt-1 list-disc text-sm text-muted-foreground">
                               {companySites.map((site) => (
@@ -433,14 +461,30 @@ const Admin = () => {
 
             <Card className="shadow-xl border-2">
               <CardHeader className="border-b">
-                <CardTitle>Sedi Esistenti ({sites.length})</CardTitle>
+                <CardTitle>Sedi Esistenti ({filteredSites.length})</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                {sites.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">Nessuna sede creata</p>
+                <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:items-center">
+                  <Label htmlFor="search-site" className="text-sm font-medium">
+                    Cerca sede
+                  </Label>
+                  <Input
+                    id="search-site"
+                    type="text"
+                    placeholder="Cerca per nome, indirizzo o azienda"
+                    value={siteSearchTerm}
+                    onChange={(e) => setSiteSearchTerm(e.target.value)}
+                    className="sm:w-72 w-full"
+                  />
+                </div>
+
+                {filteredSites.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    {siteSearchTerm ? "Nessuna sede trovata con questi criteri" : "Nessuna sede creata"}
+                  </p>
                 ) : (
                   <div className="space-y-3">
-                    {sites.map((site) => {
+                    {filteredSites.map((site) => {
                       const company = companies.find((c) => c.id === site.companyId);
                       const assignedUsers = users.filter((u) => u.siteIds?.includes(site.id));
 
@@ -510,7 +554,7 @@ const Admin = () => {
                   <Input
                     id="search-user"
                     type="text"
-                    placeholder="Cerca..."
+                    placeholder="Cerca per nome o email"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="sm:w-72 w-full"

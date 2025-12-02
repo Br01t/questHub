@@ -6,20 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Edit, Save, X, Copy, Lock } from "lucide-react";
+import { Plus, Trash2, Edit, Save, X, Copy, Lock, Search } from "lucide-react"; // Importato Search
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Questionnaire, Question, QuestionType } from "@/types/questionnaire";
 
-// Campi meta obbligatori per ogni questionario (non eliminabili)
 const META_QUESTIONS: Question[] = [
-  { id: "meta_nome", label: "Nome e Cognome Lavoratore", section: "Dati Identificativi", type: "text", required: true },
-  { id: "meta_reparto", label: "Reparto / Ufficio", section: "Dati Identificativi", type: "text", required: true },
+  { id: "meta_nome", label: "Nome e Cognome lavoratore", section: "Intestazione", type: "text", required: true },
+  { id: "meta_reparto", label: "Reparto / Ufficio", section: "Intestazione", type: "text", required: true },
 ];
 
-const isMetaQuestion = (questionId: string) => META_QUESTIONS.some(mq => mq.id === questionId);
+const isMetaQuestion = (questionId: string) => META_QUESTIONS.some((mq) => mq.id === questionId);
 
 export default function QuestionnaireManager() {
   const { user } = useAuth();
@@ -28,7 +27,8 @@ export default function QuestionnaireManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Form state
+  const [questionnaireSearchTerm, setQuestionnaireSearchTerm] = useState("");
+
   const [formName, setFormName] = useState("");
   const [formSector, setFormSector] = useState("");
   const [formQuestions, setFormQuestions] = useState<Question[]>([]);
@@ -49,18 +49,22 @@ export default function QuestionnaireManager() {
         } as Questionnaire;
       });
       setQuestionnaires(data);
+      console.log("Questionari caricati:", data.length);
     } catch (error) {
-      console.error("Errore nel caricamento dei questionari:", error);
-      toast.error("Errore nel caricamento dei questionari");
+      // ...
     } finally {
       setLoading(false);
     }
   };
 
+  const filteredQuestionnaires = questionnaires.filter((q) => {
+    const term = questionnaireSearchTerm.toLowerCase();
+    return q.name.toLowerCase().includes(term) || q.sector.toLowerCase().includes(term);
+  });
+
   const startCreating = () => {
     setFormName("");
     setFormSector("");
-    // Inizializza con i campi meta obbligatori
     setFormQuestions([...META_QUESTIONS]);
     setEditingId(null);
     setIsCreating(true);
@@ -135,21 +139,21 @@ export default function QuestionnaireManager() {
   };
 
   const addQuestion = () => {
-    const defaultSection = formQuestions.length > 0 ? formQuestions[0].section : "";
+    const defaultSection = formQuestions.length > 0 ? formQuestions[formQuestions.length - 1].section : "Nuova Sezione";
 
     const newQuestion: Question = {
       id: `q_${Date.now()}`,
       label: "",
-      section: defaultSection,
+      section: defaultSection || "",
       type: "text",
       required: true,
     };
     setFormQuestions([...formQuestions, newQuestion]);
   };
 
-  const updateQuestion = (index: number, field: keyof Question, value: any) => {
+  function updateQuestion<K extends keyof Question>(index: number, field: K, value: Question[K]) {
     const updated = [...formQuestions];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], [field]: value } as Question;
     setFormQuestions(updated);
   };
 
@@ -216,7 +220,7 @@ export default function QuestionnaireManager() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Gestione Questionari</h1>
-          <p className="text-muted-foreground mt-1">Crea e modifica i questionari per la valutazione</p>
+          <p className="text-muted-foreground mt-1">Crea e modifica i questionari per la valutazione (<b>{questionnaires.length} totali</b>)</p>
         </div>
         {!isCreating && (
           <Button onClick={startCreating}>
@@ -257,127 +261,127 @@ export default function QuestionnaireManager() {
                 {formQuestions.map((q, index) => {
                   const isMeta = isMetaQuestion(q.id);
                   return (
-                  <AccordionItem key={q.id} value={q.id}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2 text-left">
-                        <span className="font-mono text-sm text-muted-foreground">#{index + 1}</span>
-                        <span>{q.label || "Nuova domanda"}</span>
-                        {isMeta && (
-                          <Badge variant="secondary" className="gap-1 text-xs">
-                            <Lock className="h-3 w-3" />
-                            Obbligatorio
-                          </Badge>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Sezione</Label>
-                            <Input
-                              value={q.section}
-                              onChange={(e) => updateQuestion(index, "section", e.target.value)}
-                              placeholder="es. Intestazione, Illuminazione, ecc."
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Tipo</Label>
-                            <Select value={q.type} onValueChange={(value) => updateQuestion(index, "type", value as QuestionType)}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="text">Testo breve</SelectItem>
-                                <SelectItem value="textarea">Testo lungo</SelectItem>
-                                <SelectItem value="multiple">Risposta multipla</SelectItem>
-                                <SelectItem value="scale">Scala numerica</SelectItem>
-                                <SelectItem value="checkbox">Checkbox</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                    <AccordionItem key={q.id} value={q.id}>
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center gap-2 text-left">
+                          <span className="font-mono text-sm text-muted-foreground">#{index + 1}</span>
+                          <span>{q.label || "Nuova domanda"}</span>
+                          {isMeta && (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <Lock className="h-3 w-3" />
+                              Obbligatorio
+                            </Badge>
+                          )}
                         </div>
-
-                        <div className="space-y-2">
-                          <Label>Testo Domanda</Label>
-                          <Input
-                            value={q.label}
-                            onChange={(e) => updateQuestion(index, "label", e.target.value)}
-                            placeholder="es. Nome del valutato"
-                          />
-                        </div>
-
-                        {q.type === "multiple" && (
-                          <div className="space-y-2">
-                            <Label>Opzioni di risposta</Label>
-                            <div className="space-y-2">
-                              {q.options?.map((opt, optIdx) => (
-                                <div key={optIdx} className="flex gap-2">
-                                  <Input
-                                    value={opt}
-                                    onChange={(e) => updateOption(index, optIdx, e.target.value)}
-                                    placeholder={`Opzione ${optIdx + 1}`}
-                                  />
-                                  <Button variant="ghost" size="icon" onClick={() => deleteOption(index, optIdx)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                              <Button onClick={() => addOption(index)} variant="outline" size="sm">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Aggiungi Opzione
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {q.type === "scale" && (
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label>Valore minimo</Label>
+                              <Label>Sezione</Label>
                               <Input
-                                type="number"
-                                value={q.scale?.min || 1}
-                                onChange={(e) =>
-                                  updateQuestion(index, "scale", {
-                                    ...q.scale,
-                                    min: parseInt(e.target.value),
-                                  })
-                                }
+                                value={q.section}
+                                onChange={(e) => updateQuestion(index, "section", e.target.value)}
+                                placeholder="es. Intestazione, Illuminazione, ecc."
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label>Valore massimo</Label>
-                              <Input
-                                type="number"
-                                value={q.scale?.max || 5}
-                                onChange={(e) =>
-                                  updateQuestion(index, "scale", {
-                                    ...q.scale,
-                                    max: parseInt(e.target.value),
-                                  })
-                                }
-                              />
+                              <Label>Tipo</Label>
+                              <Select value={q.type} onValueChange={(value) => updateQuestion(index, "type", value as QuestionType)}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="text">Testo breve</SelectItem>
+                                  <SelectItem value="textarea">Testo lungo</SelectItem>
+                                  <SelectItem value="multiple">Risposta multipla</SelectItem>
+                                  <SelectItem value="scale">Scala numerica</SelectItem>
+                                  <SelectItem value="checkbox">Checkbox</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
-                        )}
 
-                        {!isMeta && (
-                          <div className="flex justify-end">
-                            <Button variant="destructive" size="sm" onClick={() => deleteQuestion(index)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Elimina Domanda
-                            </Button>
+                          <div className="space-y-2">
+                            <Label>Testo Domanda</Label>
+                            <Input
+                              value={q.label}
+                              onChange={(e) => updateQuestion(index, "label", e.target.value)}
+                              placeholder="es. Nome del valutato"
+                            />
                           </div>
-                        )}
-                        {isMeta && (
-                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                            Questo campo è obbligatorio per il filtraggio delle analisi e non può essere eliminato.
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+
+                          {q.type === "multiple" && (
+                            <div className="space-y-2">
+                              <Label>Opzioni di risposta</Label>
+                              <div className="space-y-2">
+                                {q.options?.map((opt, optIdx) => (
+                                  <div key={optIdx} className="flex gap-2">
+                                    <Input
+                                      value={opt}
+                                      onChange={(e) => updateOption(index, optIdx, e.target.value)}
+                                      placeholder={`Opzione ${optIdx + 1}`}
+                                    />
+                                    <Button variant="ghost" size="icon" onClick={() => deleteOption(index, optIdx)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                <Button onClick={() => addOption(index)} variant="outline" size="sm">
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  Aggiungi Opzione
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {q.type === "scale" && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Valore minimo</Label>
+                                <Input
+                                  type="number"
+                                  value={q.scale?.min || 1}
+                                  onChange={(e) =>
+                                    updateQuestion(index, "scale", {
+                                      ...q.scale,
+                                      min: parseInt(e.target.value),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Valore massimo</Label>
+                                <Input
+                                  type="number"
+                                  value={q.scale?.max || 5}
+                                  onChange={(e) =>
+                                    updateQuestion(index, "scale", {
+                                      ...q.scale,
+                                      max: parseInt(e.target.value),
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {!isMeta && (
+                            <div className="flex justify-end">
+                              <Button variant="destructive" size="sm" onClick={() => deleteQuestion(index)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Elimina Domanda
+                              </Button>
+                            </div>
+                          )}
+                          {isMeta && (
+                            <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                              Questo campo è obbligatorio per il filtraggio delle analisi e non può essere eliminato.
+                            </div>
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
                   );
                 })}
               </Accordion>
@@ -398,36 +402,59 @@ export default function QuestionnaireManager() {
       )}
 
       {!isCreating && (
-        <div className="grid gap-4">
-          {questionnaires.map((q) => (
-            <Card key={q.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>{q.name}</CardTitle>
-                    <CardDescription className="mt-2">
-                      Settore: {q.sector} • {q.questions?.length || 0} domande
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => startEditing(q)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => duplicateQuestionnaire(q)}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => deleteQuestionnaire(q.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardFooter>
-                <div className="text-sm text-muted-foreground">Creato il {q.createdAt.toLocaleDateString()}</div>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div className="relative flex-1">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="search-questionnaire"
+                type="text"
+                placeholder={`Cerca per titolo o settore`}
+                value={questionnaireSearchTerm}
+                onChange={(e) => setQuestionnaireSearchTerm(e.target.value)}
+                className="w-full pl-9"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground whitespace-nowrap">Visualizzati: <b>{filteredQuestionnaires.length}</b></p>
+          </div>
+
+          <div className="grid gap-4">
+            {filteredQuestionnaires.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                {questionnaireSearchTerm ? "Nessun questionario trovato con questi criteri." : "Nessun questionario è stato creato."}
+              </p>
+            ) : (
+              filteredQuestionnaires.map((q) => (
+                <Card key={q.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle>{q.name}</CardTitle>
+                        <CardDescription className="mt-2">
+                          Settore: {q.sector} • {q.questions?.length || 0} domande
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => startEditing(q)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => duplicateQuestionnaire(q)}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => deleteQuestionnaire(q.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardFooter>
+                    <div className="text-sm text-muted-foreground">Creato il {q.createdAt.toLocaleDateString()}</div>
+                  </CardFooter>
+                </Card>
+              ))
+            )}
+          </div>
+        </>
       )}
     </div>
   );
