@@ -12,6 +12,7 @@ interface Response {
   companyId?: string;
   siteId?: string;
   sector: string;
+  questionnaireId?: string;
 }
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -256,8 +257,13 @@ const Dashboard = () => {
       filtered = filtered.filter((r) => r.siteId === selectedSiteId);
     }
 
+    // Filtro per questionario selezionato
+    if (selectedQuestionnaire) {
+      filtered = filtered.filter((r) => r.questionnaireId === selectedQuestionnaire.id);
+    }
+
     return filtered;
-  }, [responses, selectedCompanyId, selectedSiteId]);
+  }, [responses, selectedCompanyId, selectedSiteId, selectedQuestionnaire]);
 
   const groupedByQuestion = useMemo(() => {
     const grouped: Record<string, Record<string, number>> = {};

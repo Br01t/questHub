@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuestionnaire } from "@/contexts/QuestionnaireContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { ArrowLeft, CalendarIcon, X, BarChart3 } from "lucide-react";
+import { ArrowLeft, CalendarIcon, X, BarChart3, FileText, ChevronDown, Check } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import WorkerAnalysis from "./WorkerAnalysis";
@@ -27,10 +29,12 @@ type ResponseDoc = {
   userId?: string | null;
   companyId?: string | null;
   siteId?: string | null;
+  questionnaireId?: string | null;
 };
 
 export default function Analysis() {
   const { user, userProfile, isSuperAdmin } = useAuth();
+  const { questionnaires, selectedQuestionnaire, setSelectedQuestionnaireId } = useQuestionnaire();
   const navigate = useNavigate();
   const [responses, setResponses] = useState<ResponseDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +47,7 @@ export default function Analysis() {
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState<string>("all");
   const [availableSites, setAvailableSites] = useState<{ id: string; name: string; companyId: string }[]>([]);
   const [selectedSiteFilter, setSelectedSiteFilter] = useState<string>("all");
+  const [openQuestionnaire, setOpenQuestionnaire] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -158,6 +163,11 @@ export default function Analysis() {
       filtered = filtered.filter((r) => r.siteId === selectedSiteFilter);
     }
 
+    // Filtro per questionario selezionato
+    if (selectedQuestionnaire) {
+      filtered = filtered.filter((r) => r.questionnaireId === selectedQuestionnaire.id);
+    }
+
     // Filtro per date
     if (dateFrom) {
       filtered = filtered.filter((r) => {
@@ -176,7 +186,7 @@ export default function Analysis() {
       });
     }
     return filtered;
-  }, [responses, dateFrom, dateTo, userProfile, isSuperAdmin, selectedCompanyFilter, selectedSiteFilter]);
+  }, [responses, dateFrom, dateTo, userProfile, isSuperAdmin, selectedCompanyFilter, selectedSiteFilter, selectedQuestionnaire]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
@@ -201,17 +211,62 @@ export default function Analysis() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Filtro Date */}
+        {/* Filtri */}
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Filtri Temporali
+              Filtri
             </CardTitle>
-            <CardDescription>Filtra le analisi per periodo di compilazione</CardDescription>
+            <CardDescription>Filtra le analisi per questionario e periodo</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 overflow-x-hidden px-2 sm:px-4">
             <div className="flex flex-wrap gap-4 items-end">
+              {/* Filtro Questionario */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Questionario</label>
+                <Popover open={openQuestionnaire} onOpenChange={setOpenQuestionnaire}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-[280px] justify-between gap-2", !selectedQuestionnaire && "text-muted-foreground")}>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <FileText className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{selectedQuestionnaire?.name || "Seleziona questionario"}</span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0 bg-background z-50" align="start">
+                    <Command>
+                      <CommandInput placeholder="Cerca questionario" />
+                      <CommandList>
+                        <CommandEmpty>Nessun questionario trovato.</CommandEmpty>
+                        <CommandGroup>
+                          {questionnaires.map((q) => (
+                            <CommandItem
+                              key={q.id}
+                              value={q.name}
+                              onSelect={() => {
+                                setSelectedQuestionnaireId(q.id);
+                                setOpenQuestionnaire(false);
+                              }}
+                              className="group"
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", selectedQuestionnaire?.id === q.id ? "opacity-100" : "opacity-0")} />
+                              <div className="flex flex-col">
+                                <span>{q.name}</span>
+                                <span className="text-xs text-muted-foreground group-aria-selected:text-white">
+                                  {q.sector} • {q.questions.length} domande
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">Data inizio</label>
                 <Popover>
