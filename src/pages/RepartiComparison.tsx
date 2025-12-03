@@ -232,13 +232,34 @@ interface Response {
   userId?: string | null;
 }
 
+interface QuestionItem {
+  id: string;
+  label?: string;
+  question?: string;
+  type?: string;
+  section?: string;
+  options?: string[];
+  required?: boolean;
+}
+
+interface Questionnaire {
+  id: string;
+  name: string;
+  sector: string;
+  questions: QuestionItem[];
+  isActive?: boolean;
+  createdAt?: Date;
+}
+
 interface RepartiComparisonProps {
   filteredResponses: Response[];
   availableCompanies: { id: string; name: string }[];
   availableSites: { id: string; name: string; companyId: string }[];
+  selectedQuestionnaire: Questionnaire | null;
 }
 
-const RepartiComparison = ({ filteredResponses, availableCompanies, availableSites }: RepartiComparisonProps) => {
+const RepartiComparison = ({ filteredResponses, availableCompanies, availableSites, selectedQuestionnaire }: RepartiComparisonProps) => {
+  const questions = selectedQuestionnaire?.questions || [];
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [selectedSite, setSelectedSite] = useState<string>("all");
 
@@ -299,9 +320,9 @@ const RepartiComparison = ({ filteredResponses, availableCompanies, availableSit
         return row;
       });
 
-      return { domanda: q.question, data };
+      return { domanda: q.label || q.question || q.id, data };
     });
-  }, [displayedResponses, reparti]);
+  }, [displayedResponses, reparti, questions]);
 
   return (
     <div className="space-y-8">
