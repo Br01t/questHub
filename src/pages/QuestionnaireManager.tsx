@@ -14,8 +14,10 @@ import { toast } from "sonner";
 import { Questionnaire, Question, QuestionType } from "@/types/questionnaire";
 
 const META_QUESTIONS: Question[] = [
-  { id: "meta_nome", label: "Nome e Cognome lavoratore", section: "Intestazione", type: "text", required: true },
-  { id: "meta_reparto", label: "Reparto / Ufficio", section: "Intestazione", type: "text", required: true },
+  { id: "meta_nome", label: "Nome e Cognome lavoratore", section: "Dati Identificativi", type: "text", required: true },
+  { id: "meta_reparto", label: "Reparto / Ufficio", section: "Dati Identificativi", type: "text", required: true },
+  { id: "meta_azienda", label: "Azienda", section: "Dati Identificativi", type: "text", required: true },
+  { id: "meta_sede", label: "Sede", section: "Dati Identificativi", type: "text", required: true },
 ];
 
 const isMetaQuestion = (questionId: string) => META_QUESTIONS.some((mq) => mq.id === questionId);

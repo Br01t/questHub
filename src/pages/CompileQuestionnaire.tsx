@@ -80,11 +80,19 @@ const CompileQuestionnaire: React.FC = () => {
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
-        const { companyId, companyName, siteId, siteName } = parsed;
+        const { companyId, companyName: savedCompanyName, siteId, siteName: savedSiteName } = parsed;
         setSelectedCompanyId(companyId);
         setSelectedSiteId(siteId);
-        setCompanyName(companyName?.name || companyName || "N/D");
-        setSiteName(siteName?.name || siteName || "N/D");
+        const parsedCompanyName = savedCompanyName?.name || savedCompanyName || "N/D";
+        const parsedSiteName = savedSiteName?.name || savedSiteName || "N/D";
+        setCompanyName(parsedCompanyName);
+        setSiteName(parsedSiteName);
+        // Auto-popola i campi meta con i dati salvati
+        setAnswers(prev => ({
+          ...prev,
+          meta_azienda: parsedCompanyName !== "N/D" ? parsedCompanyName : "",
+          meta_sede: parsedSiteName !== "N/D" ? parsedSiteName : "",
+        }));
         setShowSelectDialog(false);
       } catch (err) {
         console.error("Errore parsing localStorage:", err);
@@ -216,6 +224,16 @@ const CompileQuestionnaire: React.FC = () => {
     }
 
     await loadCompanyAndSite(selectedCompanyId, selectedSiteId);
+    
+    // Auto-popola i campi meta con azienda e sede selezionate
+    const selectedCompany = companies.find(c => c.id === selectedCompanyId);
+    const selectedSite = sites.find(s => s.id === selectedSiteId);
+    setAnswers(prev => ({
+      ...prev,
+      meta_azienda: selectedCompany?.name || "",
+      meta_sede: selectedSite?.name || "",
+    }));
+    
     setShowSelectDialog(false);
   };
 
@@ -439,14 +457,22 @@ const CompileQuestionnaire: React.FC = () => {
                         {isSectionComplete(sectionKey) && <span className="text-green-600 text-sm font-medium ml-auto">✅</span>}
                       </AccordionTrigger>
                       <AccordionContent className="space-y-4 p-4">
-                        {sections[sectionKey].map((q) => (
+                        {sections[sectionKey].map((q) => {
+                          const isAutoFilled = q.id === "meta_azienda" || q.id === "meta_sede";
+                          return (
                           <div key={q.id} className="p-4 border-2 rounded-lg bg-card hover:border-primary/30 transition-colors shadow-sm">
                             <Label className="font-semibold">
                               {q.label} {q.required !== false && <span className="text-destructive">*</span>}
+                              {isAutoFilled && <span className="text-xs text-muted-foreground ml-2">(auto-compilato)</span>}
                             </Label>
 
                             {q.type === "text" && (
-                              <Input value={(answers[q.id] as string) || ""} onChange={(e) => setValue(q.id, e.target.value)} className="mt-2" />
+                              <Input 
+                                value={(answers[q.id] as string) || ""} 
+                                onChange={(e) => setValue(q.id, e.target.value)} 
+                                className={`mt-2 ${isAutoFilled ? "bg-muted cursor-not-allowed" : ""}`}
+                                readOnly={isAutoFilled}
+                              />
                             )}
 
                             {q.type === "textarea" && (
@@ -500,7 +526,8 @@ const CompileQuestionnaire: React.FC = () => {
                               </div>
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </AccordionContent>
                     </AccordionItem>
                   ))}
