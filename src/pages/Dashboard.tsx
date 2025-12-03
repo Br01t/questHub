@@ -596,10 +596,21 @@ const Dashboard = () => {
                   <FileText className="h-12 w-12 text-muted-foreground" />
                 </div>
               </div>
-              <p className="text-lg text-muted-foreground">Nessun dato disponibile al momento</p>
+              {selectedQuestionnaire ? (
+                <>
+                  <p className="text-lg text-muted-foreground">
+                    Nessuna risposta trovata per il questionario "{selectedQuestionnaire.name}"
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Prova a selezionare un altro questionario o compila una nuova risposta
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg text-muted-foreground">Nessun dato disponibile al momento</p>
+              )}
               <Button onClick={() => navigate("/compile")} variant="gradient" size="lg">
                 <PenSquare className="mr-2 h-5 w-5" />
-                Compila il primo questionario
+                Compila questionario
               </Button>
             </CardContent>
           </Card>

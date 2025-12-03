@@ -350,6 +350,7 @@ export default function Analysis() {
                   setSelectedCompanyFilter={setSelectedCompanyFilter}
                   selectedSiteFilter={selectedSiteFilter}
                   setSelectedSiteFilter={setSelectedSiteFilter}
+                  selectedQuestionnaire={selectedQuestionnaire}
                 />
               </TabsContent>
 
@@ -364,6 +365,7 @@ export default function Analysis() {
                   setSelectedCompanyFilter={setSelectedCompanyFilter}
                   selectedSiteFilter={selectedSiteFilter}
                   setSelectedSiteFilter={setSelectedSiteFilter}
+                  selectedQuestionnaire={selectedQuestionnaire}
                 />
               </TabsContent>
 
@@ -378,6 +380,7 @@ export default function Analysis() {
                   setSelectedCompanyFilter={setSelectedCompanyFilter}
                   selectedSiteFilter={selectedSiteFilter}
                   setSelectedSiteFilter={setSelectedSiteFilter}
+                  selectedQuestionnaire={selectedQuestionnaire}
                 />
               </TabsContent>
 
@@ -392,11 +395,12 @@ export default function Analysis() {
                   setSelectedCompanyFilter={setSelectedCompanyFilter}
                   selectedSiteFilter={selectedSiteFilter}
                   setSelectedSiteFilter={setSelectedSiteFilter}
+                  selectedQuestionnaire={selectedQuestionnaire}
                 />
               </TabsContent>
 
               <TabsContent value="traReparti" className="mt-8">
-                <RepartiComparison filteredResponses={filteredResponses} availableCompanies={availableCompanies} availableSites={availableSites} />
+                <RepartiComparison filteredResponses={filteredResponses} availableCompanies={availableCompanies} availableSites={availableSites} selectedQuestionnaire={selectedQuestionnaire} />
               </TabsContent>
             </Tabs>
           </CardContent>

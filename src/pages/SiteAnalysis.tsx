@@ -34,79 +34,25 @@ type CompanySite = {
   companyId: string;
 };
 
-const FULL_QUESTIONS: { id: string; label: string }[] = [
-  { id: "meta_nome", label: "Nome valutato / lavoratore" },
-  { id: "meta_postazione", label: "Postazione n." },
-  { id: "meta_reparto", label: "Ufficio / Reparto" },
-  { id: "1.1", label: "1.1 Ore di lavoro settimanali a VDT (abituali)" },
-  { id: "1.2", label: "1.2 Pause/cambi attività 15' ogni 120' (SI/NO)" },
-  { id: "1.2_note", label: "1.2 - Necessità di intervento (note)" },
-  { id: "1.3", label: "1.3 Tipo di lavoro prevalente" },
-  { id: "1.4", label: "1.4 Informazione al lavoratore per uso VDT (SI/NO)" },
-  { id: "1.4_note", label: "1.4 - Necessità di intervento (note)" },
-  { id: "2.1", label: "2.1 Modalità ricambio aria (naturale/artificiale)" },
-  { id: "2.2", label: "2.2 Possibilità di regolare la temperatura" },
-  { id: "2.3", label: "2.3 Possibilità di regolare l'umidità" },
-  { id: "2.4", label: "2.4 Eccesso di calore dalle attrezzature (SI/NO)" },
-  { id: "2.4_note", label: "2.4 - Necessità di intervento (note)" },
-  { id: "3.1", label: "3.1 Tipo di luce (naturale/artificiale/mista)" },
-  { id: "3.2_nat", label: "3.2 - Regolazione luce naturale" },
-  { id: "3.2_art", label: "3.2 - Regolazione luce artificiale" },
-  { id: "3.3", label: "3.3 Posizione rispetto alla sorgente naturale" },
-  { id: "3_note", label: "3 - Necessità di intervento (note)" },
-  { id: "4.1", label: "4.1 Eventuale misura rumore (dB(A))" },
-  { id: "4.2", label: "4.2 Disturbo attenzione/comunicazione (SI/NO)" },
-  { id: "4_note", label: "4 - Necessità di intervento (note)" },
-  { id: "5.1", label: "5.1 Spazio di lavoro/manovra adeguato (SI/NO)" },
-  { id: "5.2", label: "5.2 Percorsi liberi da ostacoli (SI/NO)" },
-  { id: "5_note", label: "5 - Necessità di intervento (note)" },
-  { id: "6.1", label: "6.1 Superficie del piano adeguata (SI/NO)" },
-  { id: "6.2", label: "6.2 Altezza del piano 70-80cm (SI/NO)" },
-  {
-    id: "6.3",
-    label: "6.3 Dimensioni/disposizione schermo/tastiera/mouse (SI/NO)",
-  },
-  { id: "6_note", label: "6 - Necessità di intervento (note)" },
-  { id: "7.1", label: "7.1 Altezza sedile regolabile" },
-  { id: "7.2", label: "7.2 Inclinazione sedile regolabile" },
-  { id: "7.3", label: "7.3 Schienale con supporto dorso-lombare" },
-  { id: "7.4", label: "7.4 Schienale regolabile in altezza" },
-  {
-    id: "7.5",
-    label: "7.5 Schienale/seduta bordi smussati/materiali appropriati",
-  },
-  { id: "7.6", label: "7.6 Presenza di ruote/meccanismo spostamento" },
-  { id: "7_note", label: "7 - Necessità di intervento (note)" },
-  { id: "8.1", label: "8.1 Monitor orientabile/inclinabile" },
-  { id: "8.2", label: "8.2 Immagine stabile, senza sfarfallio" },
-  { id: "8.3", label: "8.3 Risoluzione/luminosità regolabili" },
-  { id: "8.4", label: "8.4 Contrasto/luminosità adeguati" },
-  { id: "8.5", label: "8.5 Presenza di riflessi o riverberi" },
-  { id: "8.6", label: "8.6 Note su posizione dello schermo" },
-  { id: "8_note", label: "8 - Necessità di intervento (note)" },
-  { id: "9.1", label: "9.1 Tastiera e mouse separati dallo schermo" },
-  { id: "9.2", label: "9.2 Tastiera inclinabile" },
-  { id: "9.3", label: "9.3 Spazio per appoggiare avambracci" },
-  { id: "9.4", label: "9.4 Simboli/tasti leggibili" },
-  { id: "9_note", label: "9 - Necessità di intervento (note)" },
-  { id: "10.1", label: "10.1 Software adeguato e di facile utilizzo (SI/NO)" },
-  { id: "10_note", label: "10 - Osservazioni (note)" },
-  { id: "foto_postazione", label: "Foto della postazione (URL/nota)" },
-];
+// Le domande vengono ora dal questionario selezionato
 
-const SECTION_TITLES: Record<string, string> = {
-  meta_nome: "INTESTAZIONE",
-  "1.1": "1) ORGANIZZAZIONE DEL LAVORO",
-  "2.1": "2) MICROCLIMA",
-  "3.1": "3) ILLUMINAZIONE",
-  "4.1": "4) RUMORE",
-  "5.1": "5) AMBIENTE DI LAVORO",
-  "6.1": "6) PIANO DI LAVORO",
-  "7.1": "7) SEDILE DI LAVORO",
-  "8.1": "8) SCHERMO",
-  "9.1": "9) TASTIERA E DISPOSITIVI DI INPUT",
-  "10.1": "10) SOFTWARE",
-};
+interface QuestionItem {
+  id: string;
+  label: string;
+  type?: string;
+  options?: string[];
+  required?: boolean;
+  section?: string;
+}
+
+interface Questionnaire {
+  id: string;
+  name: string;
+  sector: string;
+  questions: QuestionItem[];
+  isActive?: boolean;
+  createdAt?: Date;
+}
 
 interface SiteAnalysisProps {
   filteredResponses: ResponseDoc[];
@@ -118,6 +64,7 @@ interface SiteAnalysisProps {
   setSelectedCompanyFilter: (value: string) => void;
   selectedSiteFilter: string;
   setSelectedSiteFilter: (value: string) => void;
+  selectedQuestionnaire: Questionnaire | null;
 }
 
 export default function SiteAnalysis({
@@ -130,7 +77,10 @@ export default function SiteAnalysis({
   setSelectedCompanyFilter,
   selectedSiteFilter,
   setSelectedSiteFilter,
+  selectedQuestionnaire,
 }: SiteAnalysisProps) {
+  const FULL_QUESTIONS = selectedQuestionnaire?.questions || [];
+  const SECTION_TITLES: Record<string, string> = {};
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [selectedSite, setSelectedSite] = useState<string>("all");
   const [openCompany, setOpenCompany] = useState(false);
@@ -234,7 +184,7 @@ export default function SiteAnalysis({
     let currentSection = "";
 
     FULL_QUESTIONS.forEach((q) => {
-      const sectionTitle = SECTION_TITLES[q.id];
+      const sectionTitle = q.section;
       if (sectionTitle && sectionTitle !== currentSection) {
         currentSection = sectionTitle;
         // Riga sezione con sfondo grigio e testo bold maiuscolo
@@ -438,7 +388,7 @@ export default function SiteAnalysis({
                   let currentSection = "";
                   const rows: JSX.Element[] = [];
                   FULL_QUESTIONS.forEach((q) => {
-                    const sectionTitle = Object.entries(SECTION_TITLES).find(([id]) => q.id === id)?.[1];
+                    const sectionTitle = q.section;
                     if (sectionTitle && sectionTitle !== currentSection) {
                       currentSection = sectionTitle;
                       rows.push(
