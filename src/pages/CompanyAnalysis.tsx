@@ -1,6 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { collection, getDocs, query } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -21,11 +19,6 @@ type ResponseDoc = {
   userId?: string | null;
   companyId?: string | null;
   siteId?: string | null;
-};
-
-type Company = {
-  id: string;
-  name: string;
 };
 
 // Le domande vengono ora dal questionario selezionato
@@ -74,42 +67,27 @@ export default function CompanyAnalysis({
   selectedQuestionnaire,
 }: CompanyAnalysisProps) {
   const FULL_QUESTIONS = selectedQuestionnaire?.questions || [];
-  const SECTION_TITLES: Record<string, string> = {};
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [openCompany, setOpenCompany] = useState(false);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  // Estrai le aziende uniche dalle risposte del questionario
+  const availableCompaniesFromResponses = useMemo(() => {
+    const companies = filteredResponses
+      .map((r) => String(r.answers?.meta_azienda || ""))
+      .filter((c) => c && c !== "undefined" && c !== "null" && c !== "N/D" && c.trim() !== "");
+    return Array.from(new Set(companies)).sort();
+  }, [filteredResponses]);
+
+  // Reset azienda quando cambiano le risposte filtrate
   useEffect(() => {
-    loadCompanies();
-  }, []);
-
-  const loadCompanies = async () => {
-    setLoading(true);
-    try {
-      const q = query(collection(db, "companies"));
-      const snap = await getDocs(q);
-      let data = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Company[];
-
-      // Filtra le aziende in base ai permessi utente
-      if (!isSuperAdmin) {
-        // Per utenti normali, mostra solo le aziende assegnate
-        const userCompanyIds = userProfile?.companyIds || [];
-        data = data.filter((company) => userCompanyIds.includes(company.id));
-      }
-      // Per super_admin, mostra tutte le aziende (nessun filtro)
-
-      setCompanies(data);
-    } catch (err) {
-      console.error("load companies", err);
-    } finally {
-      setLoading(false);
+    if (selectedCompany !== "all" && !availableCompaniesFromResponses.includes(selectedCompany)) {
+      setSelectedCompany("all");
     }
-  };
+  }, [availableCompaniesFromResponses, selectedCompany]);
 
   const responsesByCompany = useMemo(() => {
     if (selectedCompany === "all") return [];
-    return filteredResponses.filter((r) => r.companyId === selectedCompany);
+    return filteredResponses.filter((r) => String(r.answers?.meta_azienda || "") === selectedCompany);
   }, [filteredResponses, selectedCompany]);
 
   const dates = responsesByCompany.map((r) => (r.createdAt?.toDate() ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm") : "N/D"));
@@ -129,8 +107,6 @@ export default function CompanyAnalysis({
   const generatePDF = () => {
     if (selectedCompany === "all" || responsesByCompany.length === 0) return;
 
-    const companyName = companies.find((c) => c.id === selectedCompany)?.name || selectedCompany;
-
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -139,7 +115,7 @@ export default function CompanyAnalysis({
     const marginLeft = 14;
 
     doc.setFontSize(16);
-    doc.text(`Report azienda: ${companyName}`, marginLeft, 20);
+    doc.text(`Report azienda: ${selectedCompany}`, marginLeft, 20);
 
     const dates = responsesByCompany.map((r) => (r.createdAt?.toDate ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm") : "N/D")).filter(Boolean);
 
@@ -206,50 +182,12 @@ export default function CompanyAnalysis({
     doc.setFontSize(8);
     doc.text(`Generato il ${format(new Date(), "dd/MM/yyyy HH:mm")}`, marginLeft, 290);
 
-    doc.save(`report_azienda_${companyName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`report_azienda_${selectedCompany}_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
-        {/* Filtri Azienda/Sede */}
-        {/* <div className="flex flex-wrap gap-2">
-          {availableCompanies.length > 0 && (
-            <select
-              value={selectedCompanyFilter}
-              onChange={(e) => {
-                setSelectedCompanyFilter(e.target.value);
-                setSelectedSiteFilter("all");
-              }}
-              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-            >
-              <option value="all">Tutte le aziende</option>
-              {availableCompanies.map((company) => (
-                <option key={company.id} value={company.id}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {availableSites.filter(s => selectedCompanyFilter === "all" || s.companyId === selectedCompanyFilter).length > 0 && (
-            <select
-              value={selectedSiteFilter}
-              onChange={(e) => setSelectedSiteFilter(e.target.value)}
-              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-            >
-              <option value="all">Tutte le sedi</option>
-              {availableSites
-                .filter(s => selectedCompanyFilter === "all" || s.companyId === selectedCompanyFilter)
-                .map((site) => (
-                  <option key={site.id} value={site.id}>
-                    {site.name}
-                  </option>
-                ))}
-            </select>
-          )}
-        </div> */}
-
         {/* Pulsante export */}
         <Button variant="default" className="gap-2" onClick={generatePDF} disabled={selectedCompany === "all"}>
           <BarChart3 className="h-4 w-4" />
@@ -263,7 +201,7 @@ export default function CompanyAnalysis({
           <Popover open={openCompany} onOpenChange={setOpenCompany}>
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" aria-expanded={openCompany} className="w-full sm:w-[300px] justify-between">
-                {selectedCompany === "all" ? "Seleziona azienda..." : companies.find((c) => c.id === selectedCompany)?.name || selectedCompany}
+                {selectedCompany === "all" ? "Seleziona azienda..." : selectedCompany}
                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -283,17 +221,17 @@ export default function CompanyAnalysis({
                       <Check className={cn("mr-2 h-4 w-4", selectedCompany === "all" ? "opacity-100" : "opacity-0")} />
                       Tutte
                     </CommandItem>
-                    {companies.map((c) => (
+                    {availableCompaniesFromResponses.map((c) => (
                       <CommandItem
-                        key={c.id}
-                        value={c.id}
+                        key={c}
+                        value={c}
                         onSelect={(v) => {
                           setSelectedCompany(v);
                           setOpenCompany(false);
                         }}
                       >
-                        <Check className={cn("mr-2 h-4 w-4", selectedCompany === c.id ? "opacity-100" : "opacity-0")} />
-                        {c.name}
+                        <Check className={cn("mr-2 h-4 w-4", selectedCompany === c ? "opacity-100" : "opacity-0")} />
+                        {c}
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -311,7 +249,7 @@ export default function CompanyAnalysis({
       ) : (
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
-            <CardTitle>{companies.find((c) => c.id === selectedCompany)?.name || selectedCompany}</CardTitle>
+            <CardTitle>{selectedCompany}</CardTitle>
             <CardDescription>Confronto risposte dei lavoratori nell'azienda</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 overflow-x-auto">

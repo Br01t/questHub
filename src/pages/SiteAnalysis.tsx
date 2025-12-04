@@ -1,6 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { collection, getDocs, query } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -21,17 +19,6 @@ type ResponseDoc = {
   userId?: string | null;
   companyId?: string | null;
   siteId?: string | null;
-};
-
-type Company = {
-  id: string;
-  name: string;
-};
-
-type CompanySite = {
-  id: string;
-  name: string;
-  companyId: string;
 };
 
 // Le domande vengono ora dal questionario selezionato
@@ -80,75 +67,27 @@ export default function SiteAnalysis({
   selectedQuestionnaire,
 }: SiteAnalysisProps) {
   const FULL_QUESTIONS = selectedQuestionnaire?.questions || [];
-  const SECTION_TITLES: Record<string, string> = {};
-  const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [selectedSite, setSelectedSite] = useState<string>("all");
-  const [openCompany, setOpenCompany] = useState(false);
   const [openSite, setOpenSite] = useState(false);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [allSites, setAllSites] = useState<CompanySite[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  // Estrai le sedi uniche dalle risposte del questionario
+  const availableSitesFromResponses = useMemo(() => {
+    const sites = filteredResponses
+      .map((r) => String(r.answers?.meta_sede || ""))
+      .filter((s) => s && s !== "undefined" && s !== "null" && s !== "N/D" && s.trim() !== "");
+    return Array.from(new Set(sites)).sort();
+  }, [filteredResponses]);
+
+  // Reset sede quando cambiano le risposte filtrate
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Carica aziende
-      const companiesSnap = await getDocs(query(collection(db, "companies")));
-      let companiesData = companiesSnap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as Company[];
-
-      // Carica sedi
-      const sitesSnap = await getDocs(query(collection(db, "companySites")));
-      let sitesData = sitesSnap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as CompanySite[];
-
-      // Filtra in base ai permessi utente
-      if (!isSuperAdmin && userProfile) {
-        const userCompanyIds = userProfile?.companyIds || [];
-        const userSiteIds = userProfile?.siteIds || [];
-
-        // Filtra aziende assegnate
-        if (userCompanyIds.length > 0) {
-          companiesData = companiesData.filter((company) => userCompanyIds.includes(company.id));
-        }
-
-        // Filtra sedi assegnate
-        if (userSiteIds.length > 0) {
-          sitesData = sitesData.filter((site) => userSiteIds.includes(site.id));
-        }
-      }
-
-      setCompanies(companiesData);
-      setAllSites(sitesData);
-    } catch (err) {
-      console.error("load data", err);
-    } finally {
-      setLoading(false);
+    if (selectedSite !== "all" && !availableSitesFromResponses.includes(selectedSite)) {
+      setSelectedSite("all");
     }
-  };
-
-  // Sedi filtrate per azienda selezionata
-  const filteredSites = useMemo(() => {
-    if (selectedCompany === "all") return allSites;
-    return allSites.filter((site) => site.companyId === selectedCompany);
-  }, [allSites, selectedCompany]);
-
-  // Reset sede quando cambia l'azienda
-  useEffect(() => {
-    setSelectedSite("all");
-  }, [selectedCompany]);
+  }, [availableSitesFromResponses, selectedSite]);
 
   const responsesBySite = useMemo(() => {
     if (selectedSite === "all") return [];
-    return filteredResponses.filter((r) => r.siteId === selectedSite);
+    return filteredResponses.filter((r) => String(r.answers?.meta_sede || "") === selectedSite);
   }, [filteredResponses, selectedSite]);
 
   const dates = responsesBySite.map((r) => (r.createdAt?.toDate() ? format(r.createdAt.toDate(), "dd/MM/yyyy HH:mm") : "N/D"));
@@ -170,7 +109,7 @@ export default function SiteAnalysis({
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const marginLeft = 14;
     doc.setFontSize(16);
-    doc.text(`Report Site: ${selectedSite}`, marginLeft, 20);
+    doc.text(`Report Sede: ${selectedSite}`, marginLeft, 20);
 
     const dates = responsesBySite
       .map((r) => r.createdAt?.toDate?.() ?? r.createdAt)
@@ -241,7 +180,7 @@ export default function SiteAnalysis({
     doc.setFontSize(8);
     doc.text(`Generato il ${format(new Date(), "dd/MM/yyyy HH:mm")}`, marginLeft, 290);
 
-    doc.save(`report_reparto_${selectedSite}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`report_sede_${selectedSite}_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
@@ -254,54 +193,9 @@ export default function SiteAnalysis({
       </div>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-accent/5 rounded-lg border">
-        {/* Filtro Azienda */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Search className="h-5 w-5 text-primary shrink-0" />
-          <Popover open={openCompany} onOpenChange={setOpenCompany}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" role="combobox" aria-expanded={openCompany} className="w-full sm:w-[300px] justify-between">
-                {selectedCompany === "all" ? "Tutte le aziende" : companies.find((c) => c.id === selectedCompany)?.name || selectedCompany}
-                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full sm:w-[250px] p-0">
-              <Command>
-                <CommandInput placeholder="Cerca azienda..." />
-                <CommandList>
-                  <CommandEmpty>Nessuna azienda trovata.</CommandEmpty>
-                  <CommandGroup>
-                    <CommandItem
-                      value="all"
-                      onSelect={() => {
-                        setSelectedCompany("all");
-                        setOpenCompany(false);
-                      }}
-                    >
-                      <Check className={cn("mr-2 h-4 w-4", selectedCompany === "all" ? "opacity-100" : "opacity-0")} />
-                      Tutte
-                    </CommandItem>
-                    {companies.map((c) => (
-                      <CommandItem
-                        key={c.id}
-                        value={c.id}
-                        onSelect={(v) => {
-                          setSelectedCompany(v);
-                          setOpenCompany(false);
-                        }}
-                      >
-                        <Check className={cn("mr-2 h-4 w-4", selectedCompany === c.id ? "opacity-100" : "opacity-0")} />
-                        {c.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
         {/* Filtro Sede */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Search className="h-5 w-5 text-primary shrink-0" />
           <Popover open={openSite} onOpenChange={setOpenSite}>
             <PopoverTrigger asChild>
               <Button
@@ -309,15 +203,9 @@ export default function SiteAnalysis({
                 role="combobox"
                 aria-expanded={openSite}
                 className="w-full sm:w-[300px] justify-between"
-                disabled={filteredSites.length === 0}
+                disabled={availableSitesFromResponses.length === 0}
               >
-                {selectedSite === "all"
-                  ? "Tutte le sedi"
-                  : (() => {
-                      const site = allSites.find((s) => s.id === selectedSite);
-                      const company = companies.find((c) => c.id === site?.companyId);
-                      return site && company ? `${site.name} - ${company.name}` : selectedSite;
-                    })()}
+                {selectedSite === "all" ? "Seleziona sede..." : selectedSite}
                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -337,22 +225,19 @@ export default function SiteAnalysis({
                       <Check className={cn("mr-2 h-4 w-4", selectedSite === "all" ? "opacity-100" : "opacity-0")} />
                       Tutte
                     </CommandItem>
-                    {filteredSites.map((s) => {
-                      const company = companies.find((c) => c.id === s.companyId);
-                      return (
-                        <CommandItem
-                          key={s.id}
-                          value={s.id}
-                          onSelect={(v) => {
-                            setSelectedSite(v);
-                            setOpenSite(false);
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", selectedSite === s.id ? "opacity-100" : "opacity-0")} />
-                          {company ? `${s.name} - ${company.name}` : s.name}
-                        </CommandItem>
-                      );
-                    })}
+                    {availableSitesFromResponses.map((s) => (
+                      <CommandItem
+                        key={s}
+                        value={s}
+                        onSelect={(v) => {
+                          setSelectedSite(v);
+                          setOpenSite(false);
+                        }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", selectedSite === s ? "opacity-100" : "opacity-0")} />
+                        {s}
+                      </CommandItem>
+                    ))}
                   </CommandGroup>
                 </CommandList>
               </Command>
@@ -368,7 +253,7 @@ export default function SiteAnalysis({
       ) : (
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
-            <CardTitle>{allSites.find((s) => s.id === selectedSite)?.name || selectedSite}</CardTitle>
+            <CardTitle>{selectedSite}</CardTitle>
             <CardDescription>Confronto risposte dei lavoratori nella sede</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 overflow-x-auto">
