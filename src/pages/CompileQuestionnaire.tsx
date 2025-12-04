@@ -128,7 +128,11 @@ const CompileQuestionnaire: React.FC = () => {
     if (selected) {
       setSelectedQuestionnaireId(questionnaireId);
       setCurrentQuestionnaire(selected);
-      setAnswers({});
+      // Preserva i campi meta auto-compilati (azienda e sede)
+      setAnswers({
+        meta_azienda: companyName !== "N/D" ? companyName : "",
+        meta_sede: siteName !== "N/D" ? siteName : "",
+      });
       toast({
         title: "Questionario selezionato",
         description: `Hai selezionato: ${selected.name}`,
