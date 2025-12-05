@@ -631,7 +631,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="shadow-lg border-2">
                 <CardHeader className="border-b bg-gradient-to-r from-accent/5 to-transparent">
-                  <CardTitle className="text-xl">Distibuzione Questionari attivi per Settore</CardTitle>
+                  <CardTitle className="text-xl">Distribuzione Questionari per Settore</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div style={{ height: 260 }}>
@@ -641,12 +641,41 @@ const Dashboard = () => {
                         <XAxis dataKey="name" />
                         <YAxis allowDecimals={false} />
                         <Tooltip />
-                      <Bar dataKey="count" fill={COLORS[0]} label={{ position: 'top', fill: 'hsl(var(--foreground))', fontSize: 12, fontWeight: 600 }}>
+                        <Bar dataKey="count" fill={COLORS[0]} label={{ position: 'top', fill: 'hsl(var(--foreground))', fontSize: 12, fontWeight: 600 }}>
                           {responsesBySector.map((_, i) => (
                             <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                           ))}
                         </Bar>
                       </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg border-2">
+                <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                  <CardTitle className="text-xl">Percentuale per Settore</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div style={{ height: 260 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={responsesBySector}
+                          dataKey="count"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                          labelLine={false}
+                        >
+                          {responsesBySector.map((_, i) => (
+                            <Cell key={`cell-pie-${i}`} fill={COLORS[i % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => [value, 'Risposte']} />
+                      </PieChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
