@@ -667,8 +667,26 @@ const Dashboard = () => {
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                          labelLine={false}
+                          label={({ name, percent, cx, cy, midAngle, outerRadius }) => {
+                            const RADIAN = Math.PI / 180;
+                            const radius = outerRadius * 1.3;
+                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                            return (
+                              <text
+                                x={x}
+                                y={y}
+                                fill="hsl(var(--foreground))"
+                                textAnchor={x > cx ? 'start' : 'end'}
+                                dominantBaseline="central"
+                                fontSize={11}
+                                fontWeight={500}
+                              >
+                                {`${name} (${(percent * 100).toFixed(0)}%)`}
+                              </text>
+                            );
+                          }}
+                          labelLine={true}
                         >
                           {responsesBySector.map((_, i) => (
                             <Cell key={`cell-pie-${i}`} fill={COLORS[i % COLORS.length]} />
