@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Shield, Building2, MapPin, ArrowLeft, Plus, Trash2, Users as UsersIcon, FileText } from "lucide-react";
+import { Shield, Building2, MapPin, ArrowLeft, Plus, Trash2, Users as UsersIcon, FileText, Pencil, Check, X } from "lucide-react";
 import { Company, CompanySite, UserProfile } from "@/types/user";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,6 +55,13 @@ const Admin = () => {
   const [newSiteName, setNewSiteName] = useState("");
   const [newSiteAddress, setNewSiteAddress] = useState("");
   const [selectedCompanyForSite, setSelectedCompanyForSite] = useState("");
+
+  // Edit states
+  const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
+  const [editSiteName, setEditSiteName] = useState("");
+  const [editSiteAddress, setEditSiteAddress] = useState("");
 
   const deleteUserProfile = async (userId: string, email: string) => {
     if (!confirm(`Sei sicuro di voler eliminare l'utente ${email}?`)) return;
@@ -185,6 +192,40 @@ const Admin = () => {
     }
   };
 
+  const startEditCompany = (company: Company) => {
+    setEditingCompanyId(company.id);
+    setEditCompanyName(company.name);
+  };
+
+  const cancelEditCompany = () => {
+    setEditingCompanyId(null);
+    setEditCompanyName("");
+  };
+
+  const saveEditCompany = async () => {
+    if (!editingCompanyId || !editCompanyName.trim()) return;
+
+    try {
+      await updateDoc(doc(db, "companies", editingCompanyId), {
+        name: editCompanyName.trim(),
+      });
+      setEditingCompanyId(null);
+      setEditCompanyName("");
+      loadData();
+      toast({
+        title: "Azienda aggiornata",
+        description: "Nome azienda modificato con successo",
+      });
+    } catch (error) {
+      console.error("Errore modifica azienda:", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile modificare l'azienda",
+      });
+    }
+  };
+
   const deleteCompany = async (companyId: string) => {
     if (!confirm("Sei sicuro di voler eliminare questa azienda? Verranno eliminate anche tutte le sue sedi.")) {
       return;
@@ -210,6 +251,44 @@ const Admin = () => {
         variant: "destructive",
         title: "Errore",
         description: "Impossibile eliminare l'azienda",
+      });
+    }
+  };
+
+  const startEditSite = (site: CompanySite) => {
+    setEditingSiteId(site.id);
+    setEditSiteName(site.name);
+    setEditSiteAddress(site.address || "");
+  };
+
+  const cancelEditSite = () => {
+    setEditingSiteId(null);
+    setEditSiteName("");
+    setEditSiteAddress("");
+  };
+
+  const saveEditSite = async () => {
+    if (!editingSiteId || !editSiteName.trim()) return;
+
+    try {
+      await updateDoc(doc(db, "companySites", editingSiteId), {
+        name: editSiteName.trim(),
+        address: editSiteAddress.trim(),
+      });
+      setEditingSiteId(null);
+      setEditSiteName("");
+      setEditSiteAddress("");
+      loadData();
+      toast({
+        title: "Sede aggiornata",
+        description: "Sede modificata con successo",
+      });
+    } catch (error) {
+      console.error("Errore modifica sede:", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile modificare la sede",
       });
     }
   };
@@ -379,20 +458,47 @@ const Admin = () => {
                   <div className="space-y-3">
                     {filteredCompanies.map((company) => {
                       const companySites = sites.filter((s) => s.companyId === company.id);
+                      const isEditing = editingCompanyId === company.id;
+                      
                       return (
                         <div key={company.id} className="flex flex-col gap-2 p-4 border rounded-lg hover:bg-accent/5 transition-colors">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-1">
                               <Building2 className="h-5 w-5 text-primary" />
-                              <div>
-                                <p className="font-semibold">{company.name}</p>
-                                <p className="text-xs text-muted-foreground">{companySites.length} sedi</p>
-                              </div>
+                              {isEditing ? (
+                                <div className="flex-1 flex items-center gap-2">
+                                  <Input
+                                    value={editCompanyName}
+                                    onChange={(e) => setEditCompanyName(e.target.value)}
+                                    className="max-w-xs"
+                                    autoFocus
+                                  />
+                                  <Button size="sm" variant="ghost" onClick={saveEditCompany}>
+                                    <Check className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={cancelEditCompany}>
+                                    <X className="h-4 w-4 text-red-600" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="font-semibold">{company.name}</p>
+                                  <p className="text-xs text-muted-foreground">{companySites.length} sedi</p>
+                                </div>
+                              )}
                             </div>
-                            <Button variant="destructive" size="sm" onClick={() => deleteCompany(company.id)} className="gap-2">
-                              <Trash2 className="h-4 w-4" />
-                              Elimina
-                            </Button>
+                            {!isEditing && (
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => startEditCompany(company)} className="gap-2">
+                                  <Pencil className="h-4 w-4" />
+                                  Modifica
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => deleteCompany(company.id)} className="gap-2">
+                                  <Trash2 className="h-4 w-4" />
+                                  Elimina
+                                </Button>
+                              </div>
+                            )}
                           </div>
                           {companySites.length > 0 && (
                             <ul className="ml-8 mt-1 list-disc text-sm text-muted-foreground">
@@ -487,30 +593,67 @@ const Admin = () => {
                     {filteredSites.map((site) => {
                       const company = companies.find((c) => c.id === site.companyId);
                       const assignedUsers = users.filter((u) => u.siteIds?.includes(site.id));
+                      const isEditing = editingSiteId === site.id;
 
                       return (
                         <div key={site.id} className="p-4 border rounded-lg hover:bg-accent/5 transition-colors">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-1">
                               <MapPin className="h-5 w-5 text-primary" />
-                              <div>
-                                <p className="font-semibold">{site.name}</p>
-                                <p className="text-sm text-muted-foreground">{site.address}</p>
-                                <Badge
-                                  style={{
-                                    backgroundColor: getCompanyColor(site.companyId),
-                                    color: "white",
-                                  }}
-                                  className="mt-1 text-xs"
-                                >
-                                  {company?.name || "Azienda non trovata"}
-                                </Badge>
-                              </div>
+                              {isEditing ? (
+                                <div className="flex-1 space-y-2">
+                                  <Input
+                                    value={editSiteName}
+                                    onChange={(e) => setEditSiteName(e.target.value)}
+                                    placeholder="Nome sede"
+                                    className="max-w-xs"
+                                    autoFocus
+                                  />
+                                  <Input
+                                    value={editSiteAddress}
+                                    onChange={(e) => setEditSiteAddress(e.target.value)}
+                                    placeholder="Indirizzo"
+                                    className="max-w-xs"
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={saveEditSite} className="gap-1">
+                                      <Check className="h-4 w-4 text-green-600" />
+                                      Salva
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={cancelEditSite} className="gap-1">
+                                      <X className="h-4 w-4 text-red-600" />
+                                      Annulla
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="font-semibold">{site.name}</p>
+                                  <p className="text-sm text-muted-foreground">{site.address}</p>
+                                  <Badge
+                                    style={{
+                                      backgroundColor: getCompanyColor(site.companyId),
+                                      color: "white",
+                                    }}
+                                    className="mt-1 text-xs"
+                                  >
+                                    {company?.name || "Azienda non trovata"}
+                                  </Badge>
+                                </div>
+                              )}
                             </div>
-                            <Button variant="destructive" size="sm" onClick={() => deleteSite(site.id)} className="gap-2">
-                              <Trash2 className="h-4 w-4" />
-                              Elimina
-                            </Button>
+                            {!isEditing && (
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => startEditSite(site)} className="gap-2">
+                                  <Pencil className="h-4 w-4" />
+                                  Modifica
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => deleteSite(site.id)} className="gap-2">
+                                  <Trash2 className="h-4 w-4" />
+                                  Elimina
+                                </Button>
+                              </div>
+                            )}
                           </div>
                           {assignedUsers.length > 0 ? (
                             <div className="mt-3 pl-8 border-l-2 border-primary/20">
