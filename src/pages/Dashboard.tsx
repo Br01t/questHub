@@ -295,9 +295,21 @@ const Dashboard = () => {
     return { satisfactionData, averageScore };
   }, [filteredResponses]);
 
+  // Mostra i settori di TUTTI i questionari attivi (non solo quello selezionato)
   const responsesBySector = useMemo(() => {
+    // Filtra solo per azienda e sede, NON per questionario
+    let responsesForSectors = responses;
+    
+    if (selectedCompanyId && selectedCompanyId !== ALL_COMPANIES_ID) {
+      responsesForSectors = responsesForSectors.filter((r) => r.companyId === selectedCompanyId);
+    }
+    
+    if (selectedSiteId && selectedSiteId !== ALL_SITES_ID) {
+      responsesForSectors = responsesForSectors.filter((r) => r.siteId === selectedSiteId);
+    }
+    
     const counts: Record<string, number> = {};
-    filteredResponses.forEach((r) => {
+    responsesForSectors.forEach((r) => {
       const sector = r.sector || "Non definito";
       counts[sector] = (counts[sector] || 0) + 1;
     });
@@ -306,7 +318,7 @@ const Dashboard = () => {
       name,
       count,
     }));
-  }, [filteredResponses]);
+  }, [responses, selectedCompanyId, selectedSiteId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
@@ -641,10 +653,17 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            <div className="flex items-center gap-3 pt-4">
-              <div className="h-1 flex-1 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
-              <h2 className="text-2xl font-bold">Distribuzione per Domanda</h2>
-              <div className="h-1 flex-1 bg-gradient-to-l from-primary to-primary-glow rounded-full" />
+            <div className="flex flex-col items-center gap-2 pt-4">
+              <div className="flex items-center gap-3 w-full">
+                <div className="h-1 flex-1 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
+                <h2 className="text-2xl font-bold">Distribuzione per Domanda</h2>
+                <div className="h-1 flex-1 bg-gradient-to-l from-primary to-primary-glow rounded-full" />
+              </div>
+              {selectedQuestionnaire && (
+                <Badge variant="secondary" className="text-sm">
+                  Questionario: {selectedQuestionnaire.name}
+                </Badge>
+              )}
             </div>
 
             <Accordion type="single" collapsible className="w-full space-y-3">
