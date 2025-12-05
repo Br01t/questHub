@@ -641,7 +641,7 @@ const Dashboard = () => {
                         <XAxis dataKey="name" />
                         <YAxis allowDecimals={false} />
                         <Tooltip />
-                        <Bar dataKey="count" fill={COLORS[0]}>
+                      <Bar dataKey="count" fill={COLORS[0]} label={{ position: 'top', fill: 'hsl(var(--foreground))', fontSize: 12, fontWeight: 600 }}>
                           {responsesBySector.map((_, i) => (
                             <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                           ))}
