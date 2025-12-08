@@ -80,8 +80,19 @@ export default function RepartoAnalysis({
       
       const repartoStr = String(reparto);
       if (!repartiMap.has(repartoStr)) {
+        // Prova sia companyIds (array) che meta_azienda (dalla risposta)
         const companyId = r.companyIds?.[0];
-        const companyName = companyId ? availableCompanies.find((c) => c.id === companyId)?.name || "" : "";
+        const metaAzienda = r.answers?.meta_azienda;
+        
+        let companyName = "";
+        if (companyId) {
+          companyName = availableCompanies.find((c) => c.id === companyId)?.name || "";
+        }
+        // Se non trovato via ID, usa meta_azienda direttamente
+        if (!companyName && metaAzienda) {
+          companyName = String(metaAzienda);
+        }
+        
         repartiMap.set(repartoStr, { reparto: repartoStr, companyName });
       }
     });

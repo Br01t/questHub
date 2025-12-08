@@ -79,8 +79,19 @@ export default function SiteAnalysis({
       if (!sede || sede === "undefined" || sede === "null" || sede === "N/D" || sede.trim() === "") return;
       
       if (!sitesMap.has(sede)) {
+        // Prova sia companyId che meta_azienda (dalla risposta)
         const companyId = r.companyId;
-        const companyName = companyId ? availableCompanies.find((c) => c.id === companyId)?.name || "" : "";
+        const metaAzienda = r.answers?.meta_azienda;
+        
+        let companyName = "";
+        if (companyId) {
+          companyName = availableCompanies.find((c) => c.id === companyId)?.name || "";
+        }
+        // Se non trovato via ID, usa meta_azienda direttamente
+        if (!companyName && metaAzienda) {
+          companyName = String(metaAzienda);
+        }
+        
         sitesMap.set(sede, { sede, companyName });
       }
     });
