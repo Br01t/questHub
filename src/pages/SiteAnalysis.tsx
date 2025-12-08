@@ -70,13 +70,25 @@ export default function SiteAnalysis({
   const [selectedSite, setSelectedSite] = useState<string>("all");
   const [openSite, setOpenSite] = useState(false);
 
-  // Estrai le sedi uniche dalle risposte del questionario
-  const availableSitesFromResponses = useMemo(() => {
-    const sites = filteredResponses
-      .map((r) => String(r.answers?.meta_sede || ""))
-      .filter((s) => s && s !== "undefined" && s !== "null" && s !== "N/D" && s.trim() !== "");
-    return Array.from(new Set(sites)).sort();
-  }, [filteredResponses]);
+  // Estrai le sedi uniche dalle risposte del questionario con l'azienda associata
+  const sitesWithCompany = useMemo(() => {
+    const sitesMap = new Map<string, { sede: string; companyName: string }>();
+    
+    filteredResponses.forEach((r) => {
+      const sede = String(r.answers?.meta_sede || "");
+      if (!sede || sede === "undefined" || sede === "null" || sede === "N/D" || sede.trim() === "") return;
+      
+      if (!sitesMap.has(sede)) {
+        const companyId = r.companyId;
+        const companyName = companyId ? availableCompanies.find((c) => c.id === companyId)?.name || "" : "";
+        sitesMap.set(sede, { sede, companyName });
+      }
+    });
+    
+    return Array.from(sitesMap.values()).sort((a, b) => a.sede.localeCompare(b.sede));
+  }, [filteredResponses, availableCompanies]);
+
+  const availableSitesFromResponses = useMemo(() => sitesWithCompany.map(s => s.sede), [sitesWithCompany]);
 
   // Reset sede quando cambiano le risposte filtrate
   useEffect(() => {
@@ -225,17 +237,18 @@ export default function SiteAnalysis({
                       <Check className={cn("mr-2 h-4 w-4", selectedSite === "all" ? "opacity-100" : "opacity-0")} />
                       Tutte
                     </CommandItem>
-                    {availableSitesFromResponses.map((s) => (
+                    {sitesWithCompany.map((item) => (
                       <CommandItem
-                        key={s}
-                        value={s}
+                        key={item.sede}
+                        value={item.sede}
                         onSelect={(v) => {
                           setSelectedSite(v);
                           setOpenSite(false);
                         }}
                       >
-                        <Check className={cn("mr-2 h-4 w-4", selectedSite === s ? "opacity-100" : "opacity-0")} />
-                        {s}
+                        <Check className={cn("mr-2 h-4 w-4", selectedSite === item.sede ? "opacity-100" : "opacity-0")} />
+                        <span>{item.sede}</span>
+                        {item.companyName && <span className="ml-2 text-muted-foreground text-xs">({item.companyName})</span>}
                       </CommandItem>
                     ))}
                   </CommandGroup>

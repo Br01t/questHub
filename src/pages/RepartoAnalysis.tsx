@@ -70,17 +70,26 @@ export default function RepartoAnalysis({
   const [selectedReparto, setSelectedReparto] = useState<string>("all");
   const [openReparto, setOpenReparto] = useState(false);
 
-  const reparti = useMemo(() => {
-    const repartiEstratti = filteredResponses.map((r) => r.answers?.meta_reparto).filter(Boolean);
+  // Crea mappa reparto -> azienda per mostrare l'azienda nel dropdown
+  const repartiWithCompany = useMemo(() => {
+    const repartiMap = new Map<string, { reparto: string; companyName: string }>();
+    
+    filteredResponses.forEach((r) => {
+      const reparto = r.answers?.meta_reparto;
+      if (!reparto) return;
+      
+      const repartoStr = String(reparto);
+      if (!repartiMap.has(repartoStr)) {
+        const companyId = r.companyIds?.[0];
+        const companyName = companyId ? availableCompanies.find((c) => c.id === companyId)?.name || "" : "";
+        repartiMap.set(repartoStr, { reparto: repartoStr, companyName });
+      }
+    });
+    
+    return Array.from(repartiMap.values()).sort((a, b) => a.reparto.localeCompare(b.reparto));
+  }, [filteredResponses, availableCompanies]);
 
-    console.log("🧭 meta_reparto trovati nei dati:", repartiEstratti);
-
-    const repartiUnici = Array.from(new Set(repartiEstratti)).sort();
-
-    console.log("✅ Reparti unici per la tendina:", repartiUnici);
-
-    return repartiUnici;
-  }, [filteredResponses]);
+  const reparti = useMemo(() => repartiWithCompany.map(r => r.reparto), [repartiWithCompany]);
 
   const responsesByReparto = useMemo(() => {
     if (selectedReparto === "all") return [];
@@ -289,17 +298,18 @@ export default function RepartoAnalysis({
                       <Check className={cn("mr-2 h-4 w-4", selectedReparto === "all" ? "opacity-100" : "opacity-0")} />
                       Tutti
                     </CommandItem>
-                    {reparti.map((r) => (
+                    {repartiWithCompany.map((item) => (
                       <CommandItem
-                        key={String(r)}
-                        value={String(r)}
+                        key={item.reparto}
+                        value={item.reparto}
                         onSelect={(v) => {
                           setSelectedReparto(v);
                           setOpenReparto(false);
                         }}
                       >
-                        <Check className={cn("mr-2 h-4 w-4", selectedReparto === String(r) ? "opacity-100" : "opacity-0")} />
-                        {String(r)}
+                        <Check className={cn("mr-2 h-4 w-4", selectedReparto === item.reparto ? "opacity-100" : "opacity-0")} />
+                        <span>{item.reparto}</span>
+                        {item.companyName && <span className="ml-2 text-muted-foreground text-xs">({item.companyName})</span>}
                       </CommandItem>
                     ))}
                   </CommandGroup>
