@@ -6,12 +6,29 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Edit, Save, X, Copy, Lock, Search } from "lucide-react"; // Importato Search
+import { Plus, Trash2, Edit, Save, X, Copy, Lock, Search, GripVertical } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Questionnaire, Question, QuestionType } from "@/types/questionnaire";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const META_QUESTIONS: Question[] = [
   { id: "meta_nome", label: "Nome e Cognome lavoratore", section: "Dati Identificativi", type: "text", required: true },
@@ -21,6 +38,178 @@ const META_QUESTIONS: Question[] = [
 ];
 
 const isMetaQuestion = (questionId: string) => META_QUESTIONS.some((mq) => mq.id === questionId);
+
+// Componente sortable per ogni domanda
+interface SortableQuestionProps {
+  question: Question;
+  index: number;
+  isMeta: boolean;
+  updateQuestion: <K extends keyof Question>(index: number, field: K, value: Question[K]) => void;
+  deleteQuestion: (index: number) => void;
+  addOption: (questionIndex: number) => void;
+  updateOption: (questionIndex: number, optionIndex: number, value: string) => void;
+  deleteOption: (questionIndex: number, optionIndex: number) => void;
+}
+
+function SortableQuestion({
+  question,
+  index,
+  isMeta,
+  updateQuestion,
+  deleteQuestion,
+  addOption,
+  updateOption,
+  deleteOption,
+}: SortableQuestionProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <AccordionItem ref={setNodeRef} style={style} value={question.id} className="relative">
+      <div className="flex items-center">
+        <button
+          {...attributes}
+          {...listeners}
+          className="p-2 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          aria-label="Trascina per riordinare"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
+        <AccordionTrigger className="hover:no-underline flex-1">
+          <div className="flex items-center gap-2 text-left">
+            <span className="font-mono text-sm text-muted-foreground">#{index + 1}</span>
+            <span>{question.label || "Nuova domanda"}</span>
+            {isMeta && (
+              <Badge variant="secondary" className="gap-1 text-xs">
+                <Lock className="h-3 w-3" />
+                Obbligatorio
+              </Badge>
+            )}
+          </div>
+        </AccordionTrigger>
+      </div>
+      <AccordionContent>
+        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Sezione</Label>
+              <Input
+                value={question.section}
+                onChange={(e) => updateQuestion(index, "section", e.target.value)}
+                placeholder="es. Intestazione, Illuminazione, ecc."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select value={question.type} onValueChange={(value) => updateQuestion(index, "type", value as QuestionType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Testo breve</SelectItem>
+                  <SelectItem value="textarea">Testo lungo</SelectItem>
+                  <SelectItem value="multiple">Risposta multipla</SelectItem>
+                  <SelectItem value="scale">Scala numerica</SelectItem>
+                  <SelectItem value="checkbox">Checkbox</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Testo Domanda</Label>
+            <Input
+              value={question.label}
+              onChange={(e) => updateQuestion(index, "label", e.target.value)}
+              placeholder="es. Nome del valutato"
+            />
+          </div>
+
+          {question.type === "multiple" && (
+            <div className="space-y-2">
+              <Label>Opzioni di risposta</Label>
+              <div className="space-y-2">
+                {question.options?.map((opt, optIdx) => (
+                  <div key={optIdx} className="flex gap-2">
+                    <Input
+                      value={opt}
+                      onChange={(e) => updateOption(index, optIdx, e.target.value)}
+                      placeholder={`Opzione ${optIdx + 1}`}
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => deleteOption(index, optIdx)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button onClick={() => addOption(index)} variant="outline" size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Aggiungi Opzione
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {question.type === "scale" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Valore minimo</Label>
+                <Input
+                  type="number"
+                  value={question.scale?.min || 1}
+                  onChange={(e) =>
+                    updateQuestion(index, "scale", {
+                      ...question.scale,
+                      min: parseInt(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Valore massimo</Label>
+                <Input
+                  type="number"
+                  value={question.scale?.max || 5}
+                  onChange={(e) =>
+                    updateQuestion(index, "scale", {
+                      ...question.scale,
+                      max: parseInt(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {!isMeta && (
+            <div className="flex justify-end">
+              <Button variant="destructive" size="sm" onClick={() => deleteQuestion(index)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Elimina Domanda
+              </Button>
+            </div>
+          )}
+          {isMeta && (
+            <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
+              Questo campo è obbligatorio per il filtraggio delle analisi e non può essere eliminato.
+            </div>
+          )}
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
 
 export default function QuestionnaireManager() {
   const { user } = useAuth();
@@ -34,6 +223,14 @@ export default function QuestionnaireManager() {
   const [formName, setFormName] = useState("");
   const [formSector, setFormSector] = useState("");
   const [formQuestions, setFormQuestions] = useState<Question[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
 
   useEffect(() => {
     loadQuestionnaires();
@@ -213,6 +410,18 @@ export default function QuestionnaireManager() {
     setFormQuestions(updated);
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setFormQuestions((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   if (loading) {
     return <div className="p-8">Caricamento...</div>;
   }
@@ -252,141 +461,42 @@ export default function QuestionnaireManager() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-lg font-semibold">Domande</Label>
+                <div>
+                  <Label className="text-lg font-semibold">Domande</Label>
+                  <p className="text-sm text-muted-foreground">Trascina le domande per riordinarle</p>
+                </div>
                 <Button onClick={addQuestion} variant="outline" size="sm">
                   <Plus className="mr-2 h-4 w-4" />
                   Aggiungi Domanda
                 </Button>
               </div>
 
-              <Accordion type="single" collapsible className="w-full">
-                {formQuestions.map((q, index) => {
-                  const isMeta = isMetaQuestion(q.id);
-                  return (
-                    <AccordionItem key={q.id} value={q.id}>
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-2 text-left">
-                          <span className="font-mono text-sm text-muted-foreground">#{index + 1}</span>
-                          <span>{q.label || "Nuova domanda"}</span>
-                          {isMeta && (
-                            <Badge variant="secondary" className="gap-1 text-xs">
-                              <Lock className="h-3 w-3" />
-                              Obbligatorio
-                            </Badge>
-                          )}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Sezione</Label>
-                              <Input
-                                value={q.section}
-                                onChange={(e) => updateQuestion(index, "section", e.target.value)}
-                                placeholder="es. Intestazione, Illuminazione, ecc."
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Tipo</Label>
-                              <Select value={q.type} onValueChange={(value) => updateQuestion(index, "type", value as QuestionType)}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="text">Testo breve</SelectItem>
-                                  <SelectItem value="textarea">Testo lungo</SelectItem>
-                                  <SelectItem value="multiple">Risposta multipla</SelectItem>
-                                  <SelectItem value="scale">Scala numerica</SelectItem>
-                                  <SelectItem value="checkbox">Checkbox</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Testo Domanda</Label>
-                            <Input
-                              value={q.label}
-                              onChange={(e) => updateQuestion(index, "label", e.target.value)}
-                              placeholder="es. Nome del valutato"
-                            />
-                          </div>
-
-                          {q.type === "multiple" && (
-                            <div className="space-y-2">
-                              <Label>Opzioni di risposta</Label>
-                              <div className="space-y-2">
-                                {q.options?.map((opt, optIdx) => (
-                                  <div key={optIdx} className="flex gap-2">
-                                    <Input
-                                      value={opt}
-                                      onChange={(e) => updateOption(index, optIdx, e.target.value)}
-                                      placeholder={`Opzione ${optIdx + 1}`}
-                                    />
-                                    <Button variant="ghost" size="icon" onClick={() => deleteOption(index, optIdx)}>
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
-                                <Button onClick={() => addOption(index)} variant="outline" size="sm">
-                                  <Plus className="mr-2 h-4 w-4" />
-                                  Aggiungi Opzione
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-
-                          {q.type === "scale" && (
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Valore minimo</Label>
-                                <Input
-                                  type="number"
-                                  value={q.scale?.min || 1}
-                                  onChange={(e) =>
-                                    updateQuestion(index, "scale", {
-                                      ...q.scale,
-                                      min: parseInt(e.target.value),
-                                    })
-                                  }
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Valore massimo</Label>
-                                <Input
-                                  type="number"
-                                  value={q.scale?.max || 5}
-                                  onChange={(e) =>
-                                    updateQuestion(index, "scale", {
-                                      ...q.scale,
-                                      max: parseInt(e.target.value),
-                                    })
-                                  }
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {!isMeta && (
-                            <div className="flex justify-end">
-                              <Button variant="destructive" size="sm" onClick={() => deleteQuestion(index)}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Elimina Domanda
-                              </Button>
-                            </div>
-                          )}
-                          {isMeta && (
-                            <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                              Questo campo è obbligatorio per il filtraggio delle analisi e non può essere eliminato.
-                            </div>
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={formQuestions.map((q) => q.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <Accordion type="single" collapsible className="w-full">
+                    {formQuestions.map((q, index) => (
+                      <SortableQuestion
+                        key={q.id}
+                        question={q}
+                        index={index}
+                        isMeta={isMetaQuestion(q.id)}
+                        updateQuestion={updateQuestion}
+                        deleteQuestion={deleteQuestion}
+                        addOption={addOption}
+                        updateOption={updateOption}
+                        deleteOption={deleteOption}
+                      />
+                    ))}
+                  </Accordion>
+                </SortableContext>
+              </DndContext>
             </div>
 
             <div className="flex justify-end gap-2">
